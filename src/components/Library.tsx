@@ -5,40 +5,80 @@ import { Book } from '../types';
 interface LibraryProps {
   books: Book[];
   onSelectBook: (book: Book) => void;
+  onImportBook: () => void;
 }
 
-const Library: React.FC<LibraryProps> = ({ books, onSelectBook }) => {
+const Library: React.FC<LibraryProps> = ({ books, onSelectBook, onImportBook }) => {
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.grid}>
-        {books.map((book) => (
-          <TouchableOpacity 
-            key={book.id} 
-            style={styles.bookCard}
-            onPress={() => onSelectBook(book)}
-          >
-            {book.coverUrl ? (
-              <Image source={{ uri: book.coverUrl }} style={styles.cover} />
-            ) : (
-              <View style={styles.placeholderCover}>
-                <Text style={styles.placeholderText}>{book.title[0]}</Text>
-              </View>
-            )}
-            <Text style={styles.title} numberOfLines={2}>{book.title}</Text>
-            <Text style={styles.author} numberOfLines={1}>{book.author}</Text>
-            <Text style={styles.format}>{book.format.toUpperCase()}</Text>
-          </TouchableOpacity>
-        ))}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Library</Text>
+        <TouchableOpacity 
+          style={styles.importButton} 
+          onPress={onImportBook}
+        >
+          <Text style={styles.importButtonText}>Import Book</Text>
+        </TouchableOpacity>
       </View>
-    </ScrollView>
+
+      <ScrollView style={styles.scrollContainer}>
+        <View style={styles.grid}>
+          {books.map((book) => (
+            <TouchableOpacity 
+              key={book.id} 
+              style={styles.bookCard}
+              onPress={() => onSelectBook(book)}
+            >
+              {book.coverUrl ? (
+                <Image source={{ uri: book.coverUrl }} style={styles.cover} />
+              ) : (
+                <View style={styles.placeholderCover}>
+                  <Text style={styles.placeholderText}>{book.title[0]}</Text>
+                </View>
+              )}
+              <Text style={styles.title} numberOfLines={2}>{book.title}</Text>
+              <Text style={styles.author} numberOfLines={1}>{book.author}</Text>
+              <Text style={styles.format}>{book.format.toUpperCase()}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#f5f5f5',
+  },
+  header: {
+    height: 50,
+    backgroundColor: '#3498db',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  importButton: {
+    backgroundColor: '#2ecc71',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 4,
+  },
+  importButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  scrollContainer: {
+    flex: 1,
+    padding: 16,
   },
   grid: {
     flexDirection: 'row',

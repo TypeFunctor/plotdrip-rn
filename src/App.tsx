@@ -12,7 +12,6 @@ import ChapterPageList from './components/ChapterPageList';
 import BookInfo from './components/BookInfo';
 import KnowledgeGraphViewer from './components/KnowledgeGraphViewer';
 import LiteraryDevicesList from './components/LiteraryDevicesList';
-import KnowledgeBase from './components/KnowledgeBase';
 import NovelPlanner from './components/NovelPlanner';
 
 const App: React.FC = () => {
@@ -22,7 +21,7 @@ const App: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [view, setView] = useState<'library' | 'reader' | 'chapters' | 'chapterPages' | 'bookInfo' | 'knowledgeGraph' | 'literaryDevices' | 'knowledgeBase' | 'novelPlanner'>('library');
+  const [view, setView] = useState<'library' | 'reader' | 'chapters' | 'chapterPages' | 'bookInfo' | 'knowledgeGraph' | 'literaryDevices' | 'novelPlanner'>('library');
   const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
   const [activeBranch, setActiveBranch] = useState<Branch | null>(null);
   
@@ -91,10 +90,6 @@ const App: React.FC = () => {
   
   const handleViewLiteraryDevices = () => {
     setView('literaryDevices');
-  };
-  
-  const handleViewKnowledgeBase = () => {
-    setView('knowledgeBase');
   };
   
   const handleOpenNovelPlanner = () => {
@@ -215,20 +210,6 @@ const App: React.FC = () => {
       );
     }
     
-    if (view === 'knowledgeBase' && selectedBook) {
-      return (
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => setView('bookInfo')} style={styles.backButton}>
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{selectedBook.title} - Knowledge Base</Text>
-          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
-            <Text style={styles.burgerIcon}>☰</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-    
     if (view === 'novelPlanner' && selectedBook) {
       return (
         <View style={styles.header}>
@@ -310,7 +291,6 @@ const App: React.FC = () => {
           onSelectChapters={handleSelectChapters} 
           onBackToLibrary={handleBackToLibrary}
           onViewLiteraryDevices={handleViewLiteraryDevices}
-          onViewKnowledgeBase={handleViewKnowledgeBase}
           onToggleSidebar={handleToggleSidebar}
           onOpenNovelPlanner={handleOpenNovelPlanner}
         />
@@ -339,16 +319,6 @@ const App: React.FC = () => {
         <LiteraryDevicesList 
           book={selectedBook} 
           onBackToBookInfo={() => setView('bookInfo')}
-        />
-      );
-    }
-    
-    if (view === 'knowledgeBase') {
-      return (
-        <KnowledgeBase 
-          book={selectedBook} 
-          onBackToBookInfo={() => setView('bookInfo')}
-          onUpdateBook={handleUpdateBook}
         />
       );
     }
@@ -392,7 +362,6 @@ const App: React.FC = () => {
         activeBranch={activeBranch}
         onViewKnowledgeGraph={selectedBook ? handleViewKnowledgeGraph : undefined}
         onViewLiteraryDevices={selectedBook ? handleViewLiteraryDevices : undefined}
-        onViewKnowledgeBase={selectedBook ? handleViewKnowledgeBase : undefined}
         onOpenNovelPlanner={selectedBook ? handleOpenNovelPlanner : undefined}
       />
     </View>

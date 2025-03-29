@@ -4,8 +4,8 @@ import { Book, Chapter } from '../types';
 
 interface ChapterListProps {
   book: Book;
-  onSelectChapter: (chapter: Chapter) => void;
-  onBackToLibrary: () => void;
+  onSelectChapter: (chapterId: string) => void;
+  onBackToLibrary?: () => void;
   onBackToBookInfo: () => void;
 }
 
@@ -23,7 +23,7 @@ const ChapterList: React.FC<ChapterListProps> = ({
             <TouchableOpacity
               key={chapter.id}
               style={styles.chapterItem}
-              onPress={() => onSelectChapter(chapter)}
+              onPress={() => onSelectChapter(chapter.id)}
             >
               <Text style={styles.chapterTitle}>{chapter.title}</Text>
               <Text style={styles.chapterPage}>Page {chapter.pageIndex + 1}</Text>
@@ -41,9 +41,11 @@ const ChapterList: React.FC<ChapterListProps> = ({
         <TouchableOpacity style={styles.footerButton} onPress={onBackToBookInfo}>
           <Text style={styles.footerButtonText}>Back to Book Info</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton} onPress={onBackToLibrary}>
-          <Text style={styles.footerButtonText}>Back to Library</Text>
-        </TouchableOpacity>
+        {onBackToLibrary && (
+          <TouchableOpacity style={styles.footerButton} onPress={onBackToLibrary}>
+            <Text style={styles.footerButtonText}>Back to Library</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { useDropzone } from 'react-dropzone';
 import { processFile } from '../utils/fileImport';
 import { Book } from '../types';
 
 interface ImportBooksProps {
-  onImportBook: (book: Book) => void;
-  isVisible: boolean;
+  onImport: (book: Book) => void;
+  onClose: () => void;
 }
 
-const ImportBooks: React.FC<ImportBooksProps> = ({ onImportBook, isVisible }) => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+const ImportBooks: React.FC<ImportBooksProps> = ({ onImport, onClose }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -33,8 +32,8 @@ const ImportBooks: React.FC<ImportBooksProps> = ({ onImportBook, isVisible }) =>
         const book = await processFile(file);
         
         if (book) {
-          onImportBook(book);
-          setIsModalVisible(false);
+          onImport(book);
+          onClose();
         } else {
           setError('Failed to process the file. Please try another file.');
         }
@@ -46,17 +45,12 @@ const ImportBooks: React.FC<ImportBooksProps> = ({ onImportBook, isVisible }) =>
     }
   });
   
-  // Update modal visibility when isVisible prop changes
-  useEffect(() => {
-    setIsModalVisible(isVisible);
-  }, [isVisible]);
-  
   return (
     <Modal
-      visible={isModalVisible}
+      visible={true}
       transparent={true}
       animationType="slide"
-      onRequestClose={() => setIsModalVisible(false)}
+      onRequestClose={onClose}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
@@ -66,7 +60,7 @@ const ImportBooks: React.FC<ImportBooksProps> = ({ onImportBook, isVisible }) =>
           </Text>
           
           <View style={styles.dropzoneContainer}>
-            <div {...getRootProps()} style={styles.dropzone}>
+            <div {...getRootProps()} className="dropzone">
               <input {...getInputProps()} />
               {isProcessing ? (
                 <Text style={styles.dropzoneText}>Processing file...</Text>
@@ -86,7 +80,7 @@ const ImportBooks: React.FC<ImportBooksProps> = ({ onImportBook, isVisible }) =>
           
           <TouchableOpacity 
             style={styles.closeButton}
-            onPress={() => setIsModalVisible(false)}
+            onPress={onClose}
           >
             <Text style={styles.closeButtonText}>Cancel</Text>
           </TouchableOpacity>
@@ -130,13 +124,6 @@ const styles = StyleSheet.create({
   dropzoneContainer: {
     width: '100%',
     marginBottom: 24,
-  },
-  dropzone: {
-    border: '2px dashed #3498db',
-    borderRadius: 4,
-    padding: 20,
-    textAlign: 'center',
-    cursor: 'pointer',
   },
   dropzoneText: {
     color: '#666',

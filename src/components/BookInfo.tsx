@@ -7,7 +7,6 @@ interface BookInfoProps {
   onSelectChapters: () => void;
   onBackToLibrary: () => void;
   onViewLiteraryDevices?: () => void;
-  onViewKnowledgeBase?: () => void;
   onToggleSidebar: () => void;
   onOpenNovelPlanner?: () => void;
 }
@@ -17,7 +16,6 @@ const BookInfo: React.FC<BookInfoProps> = ({
   onSelectChapters, 
   onBackToLibrary,
   onViewLiteraryDevices,
-  onViewKnowledgeBase,
   onToggleSidebar,
   onOpenNovelPlanner
 }) => {
@@ -130,14 +128,6 @@ const BookInfo: React.FC<BookInfoProps> = ({
               </TouchableOpacity>
             )}
             
-            {onViewKnowledgeBase && (
-              <TouchableOpacity 
-                style={styles.actionButton} 
-                onPress={onViewKnowledgeBase}
-              >
-                <Text style={styles.actionButtonText}>Knowledge Base</Text>
-              </TouchableOpacity>
-            )}
           </View>
         </View>
       </ScrollView>

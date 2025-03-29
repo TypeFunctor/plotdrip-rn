@@ -4,23 +4,23 @@ import { Book, Chapter } from '../types';
 
 interface ChapterPageListProps {
   book: Book;
-  currentChapter: Chapter;
+  chapter: Chapter;
   onSelectPage: (pageIndex: number) => void;
   onBackToChapters: () => void;
 }
 
-const ChapterPageList: React.FC<ChapterPageListProps> = ({ 
-  book, 
-  currentChapter, 
-  onSelectPage, 
-  onBackToChapters 
+const ChapterPageList: React.FC<ChapterPageListProps> = ({
+  book,
+  chapter,
+  onSelectPage,
+  onBackToChapters
 }) => {
   // Determine the range of pages in this chapter
   const getChapterPageRange = () => {
-    const chapterIndex = book.chapters?.findIndex(ch => ch.id === currentChapter.id) || 0;
+    const chapterIndex = book.chapters?.findIndex(ch => ch.id === chapter.id) || 0;
     const nextChapterIndex = chapterIndex + 1;
     
-    const startPage = currentChapter.pageIndex;
+    const startPage = chapter.pageIndex;
     let endPage = book.content.length - 1; // Default to end of book
     
     // If there's a next chapter, use its pageIndex as the end (exclusive)
@@ -40,7 +40,7 @@ const ChapterPageList: React.FC<ChapterPageListProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.chapterTitle}>{currentChapter.title}</Text>
+        <Text style={styles.chapterTitle}>{chapter.title}</Text>
         <Text style={styles.pageCount}>{pageCount} {pageCount === 1 ? 'page' : 'pages'}</Text>
       </View>
       

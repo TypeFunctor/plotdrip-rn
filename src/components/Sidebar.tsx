@@ -13,7 +13,6 @@ interface SidebarProps {
   activeBranch: Branch | null;
   onViewKnowledgeGraph?: () => void;
   onViewLiteraryDevices?: () => void;
-  onViewKnowledgeBase?: () => void;
   onOpenNovelPlanner?: () => void;
 }
 
@@ -28,7 +27,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   activeBranch,
   onViewKnowledgeGraph,
   onViewLiteraryDevices,
-  onViewKnowledgeBase,
   onOpenNovelPlanner
 }) => {
   // Render branches section if book has branches
@@ -84,10 +82,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       {/* Sidebar */}
       <View 
         style={[
-          styles.sidebar, 
+          styles.sidebar,
           { transform: [{ translateX: isOpen ? 0 : 280 }] }
         ]}
-        className="sidebar-transition"
       >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Menu</Text>
@@ -122,15 +119,6 @@ const Sidebar: React.FC<SidebarProps> = ({
                   onPress={onOpenNovelPlanner}
                 >
                   <Text style={styles.menuItemText}>Novel Planning</Text>
-                </TouchableOpacity>
-              )}
-              
-              {onViewKnowledgeBase && (
-                <TouchableOpacity 
-                  style={styles.menuItem} 
-                  onPress={onViewKnowledgeBase}
-                >
-                  <Text style={styles.menuItemText}>Knowledge Base</Text>
                 </TouchableOpacity>
               )}
               

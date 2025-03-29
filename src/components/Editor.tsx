@@ -6,11 +6,12 @@ import { deltaToHtml } from '../utils/formatConversion';
 interface EditorProps {
   book: Book;
   currentPage: number;
+  setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
   onSave: (updatedBook: Book) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }
 
-const Editor: React.FC<EditorProps> = ({ book, currentPage, onSave, onCancel }) => {
+const Editor: React.FC<EditorProps> = ({ book, currentPage, setCurrentPage, onSave, onCancel }) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const quillRef = useRef<any>(null);
   const [isQuillLoaded, setIsQuillLoaded] = useState(false);
