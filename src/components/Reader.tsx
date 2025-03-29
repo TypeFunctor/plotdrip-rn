@@ -40,20 +40,38 @@ const Reader: React.FC<ReaderProps> = ({ book, currentPage, setCurrentPage, acti
       
       // If we have HTML content in the branch, use it
       if (activeBranch.htmlContent && activeBranch.htmlContent[branchIndex]) {
-        return <div dangerouslySetInnerHTML={{ __html: activeBranch.htmlContent[branchIndex] }} />;
+        return (
+          <div 
+            className="html-content"
+            dangerouslySetInnerHTML={{ __html: activeBranch.htmlContent[branchIndex] }} 
+          />
+        );
       }
       
       // Otherwise use plain text
-      return <Text style={styles.content}>{activeBranch.content[branchIndex]}</Text>;
+      return (
+        <Text style={styles.content}>
+          {activeBranch.content[branchIndex] || "No content available for this page."}
+        </Text>
+      );
     }
     
     // If we have HTML content, use it
     if (book.htmlContent && book.htmlContent[currentPage]) {
-      return <div dangerouslySetInnerHTML={{ __html: book.htmlContent[currentPage] }} />;
+      return (
+        <div 
+          className="html-content"
+          dangerouslySetInnerHTML={{ __html: book.htmlContent[currentPage] }} 
+        />
+      );
     }
     
     // Otherwise use plain text
-    return <Text style={styles.content}>{book.content[currentPage]}</Text>;
+    return (
+      <Text style={styles.content}>
+        {book.content[currentPage] || "No content available for this page."}
+      </Text>
+    );
   };
   
   // Check if we're at a branch point
