@@ -7,6 +7,7 @@ import ChapterList from './components/ChapterList';
 import ChapterPageList from './components/ChapterPageList';
 import BookInfo from './components/BookInfo';
 import NovelPlanner from './components/NovelPlanner';
+import LiteraryDevicesList from './components/LiteraryDevicesList';
 import { Book, Chapter, Branch } from './types';
 import { sampleBooks } from './data/sampleBooks';
 import ImportBooks from './components/ImportBooks';
@@ -23,7 +24,7 @@ const App: React.FC = () => {
   const [isPlanning, setIsPlanning] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'library' | 'bookInfo' | 'chapters' | 'chapterPages' | 'reader' | 'editor' | 'planner'>('library');
+  const [viewMode, setViewMode] = useState<'library' | 'bookInfo' | 'chapters' | 'chapterPages' | 'reader' | 'editor' | 'planner' | 'literaryDevices'>('library');
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   const [activeBranch, setActiveBranch] = useState<Branch | null>(null);
   
@@ -124,6 +125,10 @@ const App: React.FC = () => {
   const handleStartPlanning = () => {
     setIsPlanning(true);
     setViewMode('planner');
+  };
+  
+  const handleViewLiteraryDevices = () => {
+    setViewMode('literaryDevices');
   };
   
   const handleSaveEdits = (updatedBook: Book) => {
@@ -243,6 +248,17 @@ const App: React.FC = () => {
     setCurrentPage(newPage);
   };
 
+  // Update book with new data (used by components like LiteraryDevicesList)
+  const handleUpdateBook = (updatedBook: Book) => {
+    setBooks(prevBooks => 
+      prevBooks.map(book => 
+        book.id === updatedBook.id ? updatedBook : book
+      )
+    );
+    
+    setSelectedBook(updatedBook);
+  };
+
   // Determine current view for contextual sidebar
   const getCurrentView = () => {
     return viewMode;
@@ -256,6 +272,7 @@ const App: React.FC = () => {
     if (viewMode === 'chapterPages' && selectedChapter) return selectedChapter.title;
     if (viewMode === 'editor') return selectedBook.title;
     if (viewMode === 'planner') return selectedBook.title;
+    if (viewMode === 'literaryDevices') return `${selectedBook.title} - Literary Devices`;
     return selectedBook.title + (activeBranch ? ` (${activeBranch.name})` : '');
   };
 
@@ -327,6 +344,7 @@ const App: React.FC = () => {
                 book={selectedBook}
                 onSelectChapters={() => setViewMode('chapters')}
                 onBackToLibrary={handleBackToLibrary}
+                onViewLiteraryDevices={handleViewLiteraryDevices}
               />
             )}
             
@@ -362,6 +380,16 @@ const App: React.FC = () => {
                 book={selectedBook}
                 onSave={handleSavePlan}
                 onCancel={handleCancelPlanning}
+              />
+            )}
+            
+            {viewMode === 'literaryDevices' && selectedBook && (
+              <LiteraryDevicesList
+                book={{
+                  ...selectedBook,
+                  onUpdate: handleUpdateBook
+                }}
+                onBackToBookInfo={handleBackToBookInfo}
               />
             )}
             
@@ -410,6 +438,7 @@ const App: React.FC = () => {
           currentView={getCurrentView()}
           onEdit={selectedBook?.isEditable && viewMode === 'reader' ? handleStartEditing : undefined}
           onPlan={selectedBook && viewMode === 'bookInfo' ? handleStartPlanning : undefined}
+          onViewLiteraryDevices={selectedBook && viewMode !== 'literaryDevices' ? handleViewLiteraryDevices : undefined}
           onBackToLibrary={handleBackToLibrary}
           onBackToBookInfo={viewMode !== 'library' && viewMode !== 'bookInfo' ? handleBackToBookInfo : undefined}
           onBackToChapters={viewMode === 'reader' || viewMode === 'chapterPages' ? handleBackToChapters : undefined}

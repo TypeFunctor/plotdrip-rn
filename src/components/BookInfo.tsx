@@ -1,38 +1,67 @@
 import React, { useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Book, Character, Event, Setting, Relationship } from '../types';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { Book } from '../types';
 import KnowledgeGraphViewer from './KnowledgeGraphViewer';
 
 interface BookInfoProps {
   book: Book;
   onSelectChapters: () => void;
   onBackToLibrary: () => void;
+  onViewLiteraryDevices?: () => void;
 }
 
-const BookInfo: React.FC<BookInfoProps> = ({ book, onSelectChapters, onBackToLibrary }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'characters' | 'events' | 'settings' | 'relationships'>('overview');
+const BookInfo: React.FC<BookInfoProps> = ({ 
+  book, 
+  onSelectChapters, 
+  onBackToLibrary,
+  onViewLiteraryDevices
+}) => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'characters' | 'plot' | 'knowledge'>('overview');
   
   const renderOverview = () => (
     <View style={styles.tabContent}>
-      <View style={styles.bookHeader}>
+      <View style={styles.coverContainer}>
         {book.coverUrl ? (
           <Image source={{ uri: book.coverUrl }} style={styles.coverImage} />
         ) : (
-          <View style={styles.placeholderCover}>
-            <Text style={styles.placeholderText}>{book.title[0]}</Text>
+          <View style={styles.coverPlaceholder}>
+            <Text style={styles.coverPlaceholderText}>{book.title[0]}</Text>
           </View>
         )}
-        <View style={styles.bookDetails}>
-          <Text style={styles.bookTitle}>{book.title}</Text>
-          <Text style={styles.bookAuthor}>by {book.author}</Text>
-          <Text style={styles.bookFormat}>{book.format.toUpperCase()}</Text>
-          <Text style={styles.bookStats}>
-            {book.chapters?.length || 0} chapters • {book.content.length} pages
-          </Text>
-          <TouchableOpacity style={styles.readButton} onPress={onSelectChapters}>
-            <Text style={styles.readButtonText}>Read Book</Text>
-          </TouchableOpacity>
+      </View>
+      
+      <View style={styles.infoContainer}>
+        <Text style={styles.title}>{book.title}</Text>
+        <Text style={styles.author}>by {book.author}</Text>
+        
+        <View style={styles.metaContainer}>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Format</Text>
+            <Text style={styles.metaValue}>{book.format.toUpperCase()}</Text>
+          </View>
+          
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Pages</Text>
+            <Text style={styles.metaValue}>{book.content.length}</Text>
+          </View>
+          
+          <View style={styles.metaItem}>
+            <Text style={styles.metaLabel}>Chapters</Text>
+            <Text style={styles.metaValue}>{book.chapters?.length || 0}</Text>
+          </View>
         </View>
+        
+        {book.isEditable && (
+          <View style={styles.editableBadge}>
+            <Text style={styles.editableBadgeText}>Editable</Text>
+          </View>
+        )}
+        
+        {book.isPlanning && (
+          <View style={[styles.editableBadge, styles.planningBadge]}>
+            <Text style={styles.editableBadgeText}>Planning</Text>
+          </View>
+        )}
       </View>
       
       <View style={styles.statsContainer}>
@@ -49,20 +78,28 @@ const BookInfo: React.FC<BookInfoProps> = ({ book, onSelectChapters, onBackToLib
           <Text style={styles.statLabel}>Settings</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{book.relationships?.length || 0}</Text>
-          <Text style={styles.statLabel}>Relationships</Text>
+          <Text style={styles.statNumber}>
+            {book.literaryDevices?.reduce((total, chapter) => total + chapter.devices.length, 0) || 0}
+          </Text>
+          <Text style={styles.statLabel}>Literary Devices</Text>
         </View>
       </View>
       
-      <View style={styles.knowledgeGraphPreview}>
-        <Text style={styles.sectionTitle}>Knowledge Graph</Text>
-        {book.characters && book.characters.length > 0 ? (
-          <KnowledgeGraphViewer book={book} height={400} />
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No knowledge graph data available yet.</Text>
-            <Text style={styles.emptyStateSubtext}>Knowledge graph data will be extracted as you read and annotate the book.</Text>
-          </View>
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={onSelectChapters}
+        >
+          <Text style={styles.actionButtonText}>View Chapters</Text>
+        </TouchableOpacity>
+        
+        {onViewLiteraryDevices && (
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={onViewLiteraryDevices}
+          >
+            <Text style={styles.actionButtonText}>Literary Devices</Text>
+          </TouchableOpacity>
         )}
       </View>
     </View>
@@ -71,27 +108,26 @@ const BookInfo: React.FC<BookInfoProps> = ({ book, onSelectChapters, onBackToLib
   const renderCharacters = () => (
     <View style={styles.tabContent}>
       <Text style={styles.sectionTitle}>Characters</Text>
+      
       {book.characters && book.characters.length > 0 ? (
         book.characters.map(character => (
-          <View key={character.id} style={styles.entityCard}>
-            <View style={styles.entityHeader}>
-              {character.imageUrl ? (
-                <Image source={{ uri: character.imageUrl }} style={styles.entityImage} />
-              ) : (
-                <View style={styles.entityImagePlaceholder}>
-                  <Text style={styles.entityImagePlaceholderText}>{character.name[0]}</Text>
-                </View>
-              )}
-              <View style={styles.entityHeaderText}>
-                <Text style={styles.entityName}>{character.name}</Text>
-                {character.firstAppearance !== undefined && (
-                  <Text style={styles.entityMeta}>First appearance: Page {character.firstAppearance + 1}</Text>
+          <View key={character.id} style={styles.characterCard}>
+            <View style={styles.characterHeader}>
+              <View style={styles.characterImagePlaceholder}>
+                <Text style={styles.characterImagePlaceholderText}>{character.name[0]}</Text>
+              </View>
+              <View style={styles.characterHeaderText}>
+                <Text style={styles.characterName}>{character.name}</Text>
+                {character.arc && (
+                  <Text style={styles.characterMeta}>Character Arc: {character.arc}</Text>
                 )}
               </View>
             </View>
+            
             {character.description && (
-              <Text style={styles.entityDescription}>{character.description}</Text>
+              <Text style={styles.characterDescription}>{character.description}</Text>
             )}
+            
             {character.traits && character.traits.length > 0 && (
               <View style={styles.tagContainer}>
                 {character.traits.map((trait, index) => (
@@ -101,145 +137,186 @@ const BookInfo: React.FC<BookInfoProps> = ({ book, onSelectChapters, onBackToLib
                 ))}
               </View>
             )}
+            
+            {character.goals && character.goals.length > 0 && (
+              <View style={styles.characterSection}>
+                <Text style={styles.characterSectionTitle}>Goals:</Text>
+                {character.goals.map((goal, index) => (
+                  <Text key={index} style={styles.characterSectionItem}>• {goal}</Text>
+                ))}
+              </View>
+            )}
+            
+            {character.conflicts && character.conflicts.length > 0 && (
+              <View style={styles.characterSection}>
+                <Text style={styles.characterSectionTitle}>Conflicts:</Text>
+                {character.conflicts.map((conflict, index) => (
+                  <Text key={index} style={styles.characterSectionItem}>• {conflict}</Text>
+                ))}
+              </View>
+            )}
           </View>
         ))
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No character data available yet.</Text>
-          <Text style={styles.emptyStateSubtext}>Character information will be extracted as you read and annotate the book.</Text>
+          <Text style={styles.emptyStateText}>No characters defined</Text>
+          <Text style={styles.emptyStateSubtext}>
+            This book doesn't have any character information yet.
+          </Text>
         </View>
       )}
     </View>
   );
   
-  const renderEvents = () => (
+  const renderPlot = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.sectionTitle}>Events</Text>
+      <Text style={styles.sectionTitle}>Plot Elements</Text>
+      
       {book.events && book.events.length > 0 ? (
-        book.events.map(event => (
-          <View key={event.id} style={styles.entityCard}>
-            <View style={styles.entityHeader}>
-              <View style={[
-                styles.eventImportanceIndicator, 
-                event.importance === 'pivotal' ? styles.pivotalEvent : 
-                event.importance === 'major' ? styles.majorEvent : 
-                styles.minorEvent
-              ]} />
-              <View style={styles.entityHeaderText}>
-                <Text style={styles.entityName}>{event.title}</Text>
-                {event.pageIndex !== undefined && (
-                  <Text style={styles.entityMeta}>Page {event.pageIndex + 1}</Text>
-                )}
+        <View>
+          <Text style={styles.subsectionTitle}>Events</Text>
+          {book.events.map(event => (
+            <View key={event.id} style={styles.eventCard}>
+              <View style={styles.eventHeader}>
+                <View style={[
+                  styles.eventImportanceIndicator, 
+                  event.importance === 'pivotal' ? styles.pivotalEvent : 
+                  event.importance === 'major' ? styles.majorEvent : 
+                  styles.minorEvent
+                ]} />
+                <View style={styles.eventHeaderText}>
+                  <Text style={styles.eventTitle}>{event.title}</Text>
+                  <View style={styles.eventMetaContainer}>
+                    {event.branchPoint && (
+                      <View style={styles.branchPointBadge}>
+                        <Text style={styles.branchPointText}>Branch Point</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
               </View>
-            </View>
-            {event.description && (
-              <Text style={styles.entityDescription}>{event.description}</Text>
-            )}
-            {event.characters && event.characters.length > 0 && (
-              <View style={styles.eventMeta}>
-                <Text style={styles.eventMetaLabel}>Characters involved:</Text>
-                <Text style={styles.eventMetaText}>
-                  {event.characters.map(charId => {
-                    const character = book.characters?.find(c => c.id === charId);
-                    return character ? character.name : 'Unknown';
-                  }).join(', ')}
-                </Text>
-              </View>
-            )}
-            {event.setting && (
-              <View style={styles.eventMeta}>
-                <Text style={styles.eventMetaLabel}>Setting:</Text>
-                <Text style={styles.eventMetaText}>
-                  {book.settings?.find(s => s.id === event.setting)?.name || 'Unknown'}
-                </Text>
-              </View>
-            )}
-          </View>
-        ))
-      ) : (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No event data available yet.</Text>
-          <Text style={styles.emptyStateSubtext}>Event information will be extracted as you read and annotate the book.</Text>
-        </View>
-      )}
-    </View>
-  );
-  
-  const renderSettings = () => (
-    <View style={styles.tabContent}>
-      <Text style={styles.sectionTitle}>Settings</Text>
-      {book.settings && book.settings.length > 0 ? (
-        book.settings.map(setting => (
-          <View key={setting.id} style={styles.entityCard}>
-            <View style={styles.entityHeader}>
-              {setting.imageUrl ? (
-                <Image source={{ uri: setting.imageUrl }} style={styles.entityImage} />
-              ) : (
-                <View style={styles.entityImagePlaceholder}>
-                  <Text style={styles.entityImagePlaceholderText}>{setting.name[0]}</Text>
+              
+              {event.description && (
+                <Text style={styles.eventDescription}>{event.description}</Text>
+              )}
+              
+              {event.characters && event.characters.length > 0 && (
+                <View style={styles.eventSection}>
+                  <Text style={styles.eventSectionTitle}>Characters Involved:</Text>
+                  <Text style={styles.eventSectionItem}>
+                    {event.characters.map(charId => {
+                      const character = book.characters?.find(c => c.id === charId);
+                      return character ? character.name : 'Unknown';
+                    }).join(', ')}
+                  </Text>
                 </View>
               )}
-              <View style={styles.entityHeaderText}>
-                <Text style={styles.entityName}>{setting.name}</Text>
-                {setting.firstAppearance !== undefined && (
-                  <Text style={styles.entityMeta}>First appearance: Page {setting.firstAppearance + 1}</Text>
-                )}
-              </View>
+              
+              {event.setting && (
+                <View style={styles.eventSection}>
+                  <Text style={styles.eventSectionTitle}>Setting:</Text>
+                  <Text style={styles.eventSectionItem}>
+                    {book.settings?.find(s => s.id === event.setting)?.name || 'Unknown'}
+                  </Text>
+                </View>
+              )}
             </View>
-            {setting.description && (
-              <Text style={styles.entityDescription}>{setting.description}</Text>
-            )}
-            {setting.events && setting.events.length > 0 && (
-              <View style={styles.settingMeta}>
-                <Text style={styles.settingMetaLabel}>Events that occur here:</Text>
-                <Text style={styles.settingMetaText}>
-                  {setting.events.map(eventId => {
-                    const event = book.events?.find(e => e.id === eventId);
-                    return event ? event.title : 'Unknown';
-                  }).join(', ')}
-                </Text>
-              </View>
-            )}
-          </View>
-        ))
+          ))}
+        </View>
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No setting data available yet.</Text>
-          <Text style={styles.emptyStateSubtext}>Setting information will be extracted as you read and annotate the book.</Text>
+          <Text style={styles.emptyStateText}>No plot elements defined</Text>
+          <Text style={styles.emptyStateSubtext}>
+            This book doesn't have any plot information yet.
+          </Text>
+        </View>
+      )}
+      
+      {book.settings && book.settings.length > 0 && (
+        <View style={styles.settingsContainer}>
+          <Text style={styles.subsectionTitle}>Settings</Text>
+          {book.settings.map(setting => (
+            <View key={setting.id} style={styles.settingCard}>
+              <Text style={styles.settingName}>{setting.name}</Text>
+              {setting.description && (
+                <Text style={styles.settingDescription}>{setting.description}</Text>
+              )}
+              {setting.atmosphere && (
+                <Text style={styles.settingAtmosphere}>Atmosphere: {setting.atmosphere}</Text>
+              )}
+              {setting.timeperiod && (
+                <Text style={styles.settingTimePeriod}>Time Period: {setting.timeperiod}</Text>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+      
+      {book.branches && book.branches.length > 0 && (
+        <View style={styles.branchesContainer}>
+          <Text style={styles.subsectionTitle}>Story Branches</Text>
+          {book.branches.map(branch => (
+            <View key={branch.id} style={styles.branchCard}>
+              <Text style={styles.branchName}>{branch.name}</Text>
+              {branch.description && (
+                <Text style={styles.branchDescription}>{branch.description}</Text>
+              )}
+              <View style={styles.branchDetails}>
+                <Text style={styles.branchDetailLabel}>Branch Point:</Text>
+                <Text style={styles.branchDetailText}>
+                  {book.events?.find(e => e.id === branch.branchPointEventId)?.title || 'Unknown Event'}
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
       )}
     </View>
   );
   
-  const renderRelationships = () => (
+  const renderKnowledgeGraph = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.sectionTitle}>Relationships</Text>
-      {book.relationships && book.relationships.length > 0 ? (
-        book.relationships.map(relationship => (
-          <View key={relationship.id} style={styles.entityCard}>
-            <View style={styles.relationshipHeader}>
-              <View style={styles.relationshipType}>
-                <Text style={styles.relationshipTypeText}>{relationship.type}</Text>
-              </View>
-              <Text style={styles.entityName}>
-                {relationship.characters.map(charId => {
-                  const character = book.characters?.find(c => c.id === charId);
-                  return character ? character.name : 'Unknown';
-                }).join(' & ')}
-              </Text>
-              {relationship.firstMentioned !== undefined && (
-                <Text style={styles.entityMeta}>First mentioned: Page {relationship.firstMentioned + 1}</Text>
-              )}
-            </View>
-            {relationship.description && (
-              <Text style={styles.entityDescription}>{relationship.description}</Text>
-            )}
-          </View>
-        ))
+      <Text style={styles.sectionTitle}>Knowledge Graph</Text>
+      
+      {book.knowledgeGraph && 
+       (book.knowledgeGraph.nodes.length > 0 || 
+        book.characters?.length || 
+        book.events?.length || 
+        book.settings?.length) ? (
+        <View style={styles.graphContainer}>
+          <KnowledgeGraphViewer book={book} height={400} />
+        </View>
       ) : (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No relationship data available yet.</Text>
-          <Text style={styles.emptyStateSubtext}>Relationship information will be extracted as you read and annotate the book.</Text>
+          <Text style={styles.emptyStateText}>No knowledge graph available</Text>
+          <Text style={styles.emptyStateSubtext}>
+            This book doesn't have knowledge graph data yet.
+          </Text>
+        </View>
+      )}
+      
+      {book.knowledgeGraph && book.knowledgeGraph.triplets && book.knowledgeGraph.triplets.length > 0 && (
+        <View style={styles.tripletsContainer}>
+          <Text style={styles.subsectionTitle}>Knowledge Triplets</Text>
+          {book.knowledgeGraph.triplets.slice(0, 10).map((triplet, index) => (
+            <View key={index} style={styles.tripletItem}>
+              <Text style={styles.tripletText}>
+                <Text style={styles.tripletSubject}>{triplet.subject}</Text>
+                {' '}
+                <Text style={styles.tripletPredicate}>{triplet.predicate}</Text>
+                {' '}
+                <Text style={styles.tripletObject}>{triplet.object}</Text>
+              </Text>
+              <Text style={styles.tripletConfidence}>
+                Confidence: {Math.round(triplet.confidence * 100)}%
+              </Text>
+            </View>
+          ))}
+          {book.knowledgeGraph.triplets.length > 10 && (
+            <Text style={styles.moreTriplets}>
+              + {book.knowledgeGraph.triplets.length - 10} more triplets
+            </Text>
+          )}
         </View>
       )}
     </View>
@@ -261,39 +338,29 @@ const BookInfo: React.FC<BookInfoProps> = ({ book, onSelectChapters, onBackToLib
           <Text style={[styles.tabText, activeTab === 'characters' && styles.activeTabText]}>Characters</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.tab, activeTab === 'events' && styles.activeTab]} 
-          onPress={() => setActiveTab('events')}
+          style={[styles.tab, activeTab === 'plot' && styles.activeTab]} 
+          onPress={() => setActiveTab('plot')}
         >
-          <Text style={[styles.tabText, activeTab === 'events' && styles.activeTabText]}>Events</Text>
+          <Text style={[styles.tabText, activeTab === 'plot' && styles.activeTabText]}>Plot</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.tab, activeTab === 'settings' && styles.activeTab]} 
-          onPress={() => setActiveTab('settings')}
+          style={[styles.tab, activeTab === 'knowledge' && styles.activeTab]} 
+          onPress={() => setActiveTab('knowledge')}
         >
-          <Text style={[styles.tabText, activeTab === 'settings' && styles.activeTabText]}>Settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === 'relationships' && styles.activeTab]} 
-          onPress={() => setActiveTab('relationships')}
-        >
-          <Text style={[styles.tabText, activeTab === 'relationships' && styles.activeTabText]}>Relationships</Text>
+          <Text style={[styles.tabText, activeTab === 'knowledge' && styles.activeTabText]}>Knowledge Graph</Text>
         </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.scrollContainer}>
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'characters' && renderCharacters()}
-        {activeTab === 'events' && renderEvents()}
-        {activeTab === 'settings' && renderSettings()}
-        {activeTab === 'relationships' && renderRelationships()}
+        {activeTab === 'plot' && renderPlot()}
+        {activeTab === 'knowledge' && renderKnowledgeGraph()}
       </ScrollView>
       
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerButton} onPress={onBackToLibrary}>
           <Text style={styles.footerButtonText}>Back to Library</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.footerButton} onPress={onSelectChapters}>
-          <Text style={styles.footerButtonText}>View Chapters</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -304,6 +371,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    display: 'flex',
+    flexDirection: 'column',
   },
   tabs: {
     flexDirection: 'row',
@@ -334,71 +403,82 @@ const styles = StyleSheet.create({
   tabContent: {
     padding: 16,
   },
-  bookHeader: {
-    flexDirection: 'row',
-    marginBottom: 20,
+  coverContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
   coverImage: {
-    width: 120,
-    height: 180,
+    width: 150,
+    height: 225,
     borderRadius: 8,
-    marginRight: 16,
   },
-  placeholderCover: {
-    width: 120,
-    height: 180,
+  coverPlaceholder: {
+    width: 150,
+    height: 225,
     borderRadius: 8,
     backgroundColor: '#3498db',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
   },
-  placeholderText: {
+  coverPlaceholderText: {
     fontSize: 48,
     fontWeight: 'bold',
     color: 'white',
   },
-  bookDetails: {
-    flex: 1,
-    justifyContent: 'center',
+  infoContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  bookTitle: {
-    fontSize: 20,
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 4,
+    textAlign: 'center',
+    marginBottom: 8,
   },
-  bookAuthor: {
+  author: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  bookFormat: {
+  metaContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 16,
+  },
+  metaItem: {
+    alignItems: 'center',
+  },
+  metaLabel: {
     fontSize: 12,
     color: '#999',
+    marginBottom: 4,
+  },
+  metaValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  editableBadge: {
+    backgroundColor: '#2ecc71',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 16,
     marginBottom: 8,
   },
-  bookStats: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+  planningBadge: {
+    backgroundColor: '#9b59b6',
   },
-  readButton: {
-    backgroundColor: '#3498db',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  readButtonText: {
+  editableBadgeText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 12,
   },
   statsContainer: {
     flexDirection: 'row',
     backgroundColor: 'white',
     borderRadius: 8,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -418,23 +498,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 16,
+  },
+  actionButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 4,
+    flex: 1,
+    marginHorizontal: 8,
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 16,
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 16,
     marginBottom: 12,
   },
-  knowledgeGraphPreview: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  entityCard: {
+  characterCard: {
     backgroundColor: 'white',
     borderRadius: 8,
     padding: 16,
@@ -445,17 +538,11 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
-  entityHeader: {
+  characterHeader: {
     flexDirection: 'row',
     marginBottom: 8,
   },
-  entityImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 12,
-  },
-  entityImagePlaceholder: {
+  characterImagePlaceholder: {
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -464,25 +551,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  entityImagePlaceholderText: {
+  characterImagePlaceholderText: {
     fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
   },
-  entityHeaderText: {
+  characterHeaderText: {
     flex: 1,
     justifyContent: 'center',
   },
-  entityName: {
+  characterName: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 2,
   },
-  entityMeta: {
+  characterMeta: {
     fontSize: 12,
     color: '#999',
   },
-  entityDescription: {
+  characterDescription: {
     fontSize: 14,
     color: '#333',
     marginBottom: 8,
@@ -490,6 +577,7 @@ const styles = StyleSheet.create({
   tagContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginBottom: 8,
   },
   tag: {
     backgroundColor: '#e0e0e0',
@@ -501,6 +589,34 @@ const styles = StyleSheet.create({
   tagText: {
     fontSize: 12,
     color: '#666',
+  },
+  characterSection: {
+    marginTop: 8,
+  },
+  characterSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 4,
+  },
+  characterSectionItem: {
+    fontSize: 14,
+    color: '#333',
+  },
+  eventCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  eventHeader: {
+    flexDirection: 'row',
+    marginBottom: 8,
   },
   eventImportanceIndicator: {
     width: 8,
@@ -517,57 +633,186 @@ const styles = StyleSheet.create({
   minorEvent: {
     backgroundColor: '#3498db',
   },
-  eventMeta: {
-    marginTop: 4,
+  eventHeaderText: {
+    flex: 1,
   },
-  eventMetaLabel: {
-    fontSize: 12,
+  eventTitle: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#666',
+    marginBottom: 2,
   },
-  eventMetaText: {
-    fontSize: 14,
-    color: '#333',
+  eventMetaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  settingMeta: {
-    marginTop: 4,
-  },
-  settingMetaLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  settingMetaText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  relationshipHeader: {
-    marginBottom: 8,
-  },
-  relationshipType: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#3498db',
+  branchPointBadge: {
+    backgroundColor: '#9b59b6',
     borderRadius: 12,
     paddingVertical: 2,
     paddingHorizontal: 8,
+  },
+  branchPointText: {
+    fontSize: 10,
+    color: 'white',
+  },
+  eventDescription: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  eventSection: {
+    marginTop: 8,
+  },
+  eventSectionTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
     marginBottom: 4,
   },
-  relationshipTypeText: {
+  eventSectionItem: {
+    fontSize: 14,
+    color: '#333',
+  },
+  settingsContainer: {
+    marginTop: 16,
+  },
+  settingCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  settingName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  settingAtmosphere: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  settingTimePeriod: {
+    fontSize: 14,
+    color: '#666',
+  },
+  branchesContainer: {
+    marginTop: 16,
+  },
+  branchCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#9b59b6',
+  },
+  branchName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  branchDescription: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 8,
+  },
+  branchDetails: {
+    flexDirection: 'row',
+  },
+  branchDetailLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#666',
+    marginRight: 8,
+  },
+  branchDetailText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  graphContainer: {
+    height: 400,
+    marginBottom: 20,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tripletsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginTop: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  tripletItem: {
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  tripletText: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  tripletSubject: {
+    fontWeight: 'bold',
+    color: '#e74c3c',
+  },
+  tripletPredicate: {
+    fontStyle: 'italic',
+    color: '#3498db',
+  },
+  tripletObject: {
+    fontWeight: 'bold',
+    color: '#2ecc71',
+  },
+  tripletConfidence: {
     fontSize: 12,
-    color: 'white',
-    textTransform: 'capitalize',
+    color: '#999',
+  },
+  moreTriplets: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   emptyState: {
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'white',
+    borderRadius: 8,
+    marginBottom: 16,
   },
   emptyStateText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#666',
     marginBottom: 8,
-    textAlign: 'center',
   },
   emptyStateSubtext: {
     fontSize: 14,
@@ -575,18 +820,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   footer: {
-    flexDirection: 'row',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: '#ddd',
     backgroundColor: 'white',
   },
   footerButton: {
-    flex: 1,
     backgroundColor: '#3498db',
     paddingVertical: 10,
     borderRadius: 4,
-    marginHorizontal: 4,
     alignItems: 'center',
   },
   footerButtonText: {

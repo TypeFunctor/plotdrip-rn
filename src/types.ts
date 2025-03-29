@@ -17,6 +17,8 @@ export interface Book {
   branches?: Branch[];
   knowledgeGraph?: KnowledgeGraph;
   isPlanning?: boolean; // Flag to indicate if this is a planning document
+  literaryDevices?: LiteraryDevicesByChapter[];
+  onUpdate?: (book: Book) => void; // Function to update the book (used by components)
 }
 
 export interface Chapter {
@@ -119,6 +121,62 @@ export interface KnowledgeGraphTriplet {
   sourcePageIndex?: number;
 }
 
+export interface LiteraryDevicesByChapter {
+  chapterId: string;
+  devices: LiteraryDevice[];
+}
+
+export interface LiteraryDevice {
+  id: string;
+  type: LiteraryDeviceType;
+  category: LiteraryDeviceCategory;
+  description: string;
+  excerpt?: string;
+  pageIndex?: number;
+  impact?: string;
+  characters?: string[]; // IDs of characters involved
+  settings?: string[]; // IDs of settings involved
+  events?: string[]; // IDs of events involved
+  relatedDevices?: string[]; // IDs of related literary devices
+}
+
+export type LiteraryDeviceCategory = 
+  'character' | 
+  'plot' | 
+  'setting' | 
+  'perspective' | 
+  'figurative_language' | 
+  'structure';
+
+export type LiteraryDeviceType = 
+  // Character devices
+  'character_introduction' | 'character_development' | 'character_foil' | 'character_archetype' | 
+  'character_motivation' | 'character_epiphany' | 'character_transformation' |
+  
+  // Plot devices
+  'foreshadowing' | 'flashback' | 'plot_twist' | 'cliffhanger' | 'chekhov_gun' | 
+  'deus_ex_machina' | 'red_herring' | 'setup_payoff' | 'dramatic_irony' |
+  
+  // Setting devices
+  'world_building' | 'pathetic_fallacy' | 'setting_as_character' | 'setting_contrast' |
+  'setting_symbolism' | 'setting_mood' | 'setting_as_constraint' |
+  
+  // Perspective devices
+  'point_of_view_shift' | 'unreliable_narrator' | 'stream_of_consciousness' | 
+  'interior_monologue' | 'epistolary' | 'framing_device' | 'breaking_fourth_wall' |
+  
+  // Figurative language
+  'metaphor' | 'simile' | 'personification' | 'hyperbole' | 'irony' | 
+  'symbol' | 'allegory' | 'allusion' | 'juxtaposition' | 'motif' |
+  'alliteration' | 'assonance' | 'consonance' | 'onomatopoeia' |
+  
+  // Structure devices
+  'parallel_plot' | 'frame_story' | 'vignette' | 'in_medias_res' | 'exposition' |
+  'rising_action' | 'climax' | 'falling_action' | 'resolution' | 'denouement' |
+  
+  // Other
+  'other';
+
 export interface OCRResponse {
   success: boolean;
   pages: string[]; // HTML strings for each page
@@ -132,7 +190,7 @@ export interface ConversionResult {
 }
 
 export interface LLMRequest {
-  type: 'plot_suggestion' | 'character_development' | 'event_creation' | 'branch_suggestion' | 'complete_story';
+  type: 'plot_suggestion' | 'character_development' | 'event_creation' | 'branch_suggestion' | 'complete_story' | 'literary_device_analysis';
   book: Partial<Book>;
   context?: string;
   constraints?: string[];
@@ -161,4 +219,10 @@ export interface BranchSuggestion {
   events: Partial<Event>[];
   reconnectPossible: boolean;
   reconnectDescription?: string;
+}
+
+export interface LiteraryDeviceAnalysisResult {
+  chapterId: string;
+  chapterTitle: string;
+  devices: LiteraryDevice[];
 }
