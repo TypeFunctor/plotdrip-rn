@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "PlotDrip",
+    "slug": "plotdrip-rn",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/book.svg",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./public/book.svg",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.typefunctor.plotdrip"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/book.svg",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.typefunctor.plotdrip"
+    },
+    "web": {
+      "favicon": "./public/book.svg"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

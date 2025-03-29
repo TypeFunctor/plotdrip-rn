@@ -18,7 +18,6 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthrough": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
