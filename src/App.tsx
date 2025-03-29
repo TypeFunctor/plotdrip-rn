@@ -403,6 +403,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    width: '100%',
+    height: '100%',
   },
   header: {
     height: 50,
@@ -411,6 +413,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     justifyContent: 'space-between',
+    width: '100%',
   },
   headerTitle: {
     fontSize: 18,
@@ -439,10 +442,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    width: '100%',
   },
   graphContainer: {
     flex: 1,
     padding: 16,
+    width: '100%',
   },
   backButtonText: {
     color: 'white',

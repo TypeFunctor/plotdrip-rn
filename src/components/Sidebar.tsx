@@ -85,7 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <View 
         style={[
           styles.sidebar, 
-          { transform: [{ translateX: isOpen ? 0 : -280 }] }
+          { transform: [{ translateX: isOpen ? 0 : 280 }] }
         ]}
         className="sidebar-transition"
       >
@@ -179,13 +179,13 @@ const styles = StyleSheet.create({
   sidebar: {
     position: 'absolute',
     top: 0,
-    left: 0,
+    right: 0,
     bottom: 0,
     width: 280,
     backgroundColor: 'white',
     zIndex: 1001,
     shadowColor: '#000',
-    shadowOffset: { width: 2, height: 0 },
+    shadowOffset: { width: -2, height: 0 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 5,
