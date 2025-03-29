@@ -1,28 +1,39 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Branch } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: () => void;
+  onCreateNew: () => void;
   currentView: string;
   onEdit?: () => void;
+  onPlan?: () => void;
   onBackToLibrary: () => void;
   onBackToBookInfo?: () => void;
   onBackToChapters?: () => void;
   onBackToChapterPages?: () => void;
+  branches?: Branch[];
+  onSelectBranch?: (branch: Branch) => void;
+  activeBranchId?: string;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   isOpen, 
   onClose, 
-  onImport, 
+  onImport,
+  onCreateNew,
   currentView,
   onEdit,
+  onPlan,
   onBackToLibrary,
   onBackToBookInfo,
   onBackToChapters,
-  onBackToChapterPages
+  onBackToChapterPages,
+  branches = [],
+  onSelectBranch,
+  activeBranchId
 }) => {
   // Using CSS transitions instead of Animated API to avoid global reference issues
   return (
@@ -48,7 +59,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           </TouchableOpacity>
         </View>
         
-        <View style={styles.content}>
+        <ScrollView style={styles.content}>
+          {/* Create New Book */}
+          <TouchableOpacity style={styles.menuItem} onPress={onCreateNew}>
+            <Text style={styles.menuItemText}>Create New Book</Text>
+          </TouchableOpacity>
+          
           {/* Import Books - available in all views */}
           <TouchableOpacity style={styles.menuItem} onPress={onImport}>
             <Text style={styles.menuItemText}>Import Books</Text>
@@ -58,6 +74,13 @@ const Sidebar: React.FC<SidebarProps> = ({
           {onEdit && currentView === 'reader' && (
             <TouchableOpacity style={styles.menuItem} onPress={onEdit}>
               <Text style={styles.menuItemText}>Edit Page</Text>
+            </TouchableOpacity>
+          )}
+          
+          {/* Plan Novel - only in book info view */}
+          {onPlan && currentView === 'bookInfo' && (
+            <TouchableOpacity style={styles.menuItem} onPress={onPlan}>
+              <Text style={styles.menuItemText}>Plan Novel</Text>
             </TouchableOpacity>
           )}
           
@@ -85,7 +108,44 @@ const Sidebar: React.FC<SidebarProps> = ({
               <Text style={styles.menuItemText}>Back to Chapter Pages</Text>
             </TouchableOpacity>
           )}
-        </View>
+          
+          {/* Story Branches - only in reader view */}
+          {currentView === 'reader' && branches.length > 0 && (
+            <View style={styles.branchesSection}>
+              <Text style={styles.branchesSectionTitle}>Story Branches</Text>
+              
+              {/* Main Timeline option */}
+              <TouchableOpacity 
+                style={[
+                  styles.branchItem, 
+                  !activeBranchId && styles.activeBranchItem
+                ]} 
+                onPress={() => onSelectBranch && onSelectBranch({
+                  id: '',
+                  name: 'Main Timeline',
+                  branchPointPageIndex: 0,
+                  content: []
+                })}
+              >
+                <Text style={styles.branchItemText}>Main Timeline</Text>
+              </TouchableOpacity>
+              
+              {/* Branch options */}
+              {branches.map(branch => (
+                <TouchableOpacity 
+                  key={branch.id}
+                  style={[
+                    styles.branchItem, 
+                    branch.id === activeBranchId && styles.activeBranchItem
+                  ]} 
+                  onPress={() => onSelectBranch && onSelectBranch(branch)}
+                >
+                  <Text style={styles.branchItemText}>{branch.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </ScrollView>
       </View>
     </>
   );
@@ -133,15 +193,40 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   content: {
-    padding: 16,
+    flex: 1,
   },
   menuItem: {
     paddingVertical: 12,
+    paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
   menuItemText: {
     fontSize: 16,
+  },
+  branchesSection: {
+    marginTop: 16,
+    paddingHorizontal: 16,
+  },
+  branchesSectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#333',
+  },
+  branchItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 6,
+    borderRadius: 4,
+    backgroundColor: '#f0f0f0',
+  },
+  activeBranchItem: {
+    backgroundColor: '#3498db',
+  },
+  branchItemText: {
+    fontSize: 14,
+    color: '#333',
   },
 });
 

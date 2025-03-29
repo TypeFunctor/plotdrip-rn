@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Book, Character, Event, Setting, Relationship } from '../types';
+import KnowledgeGraphViewer from './KnowledgeGraphViewer';
 
 interface BookInfoProps {
   book: Book;
@@ -54,23 +55,9 @@ const BookInfo: React.FC<BookInfoProps> = ({ book, onSelectChapters, onBackToLib
       </View>
       
       <View style={styles.knowledgeGraphPreview}>
-        <Text style={styles.sectionTitle}>Knowledge Graph Preview</Text>
+        <Text style={styles.sectionTitle}>Knowledge Graph</Text>
         {book.characters && book.characters.length > 0 ? (
-          <View style={styles.graphPreview}>
-            {/* Simple visualization of connections */}
-            <View style={styles.graphNode}>
-              <Text style={styles.graphNodeText}>{book.title}</Text>
-            </View>
-            <View style={styles.graphConnections}>
-              {book.characters.slice(0, 3).map((character, index) => (
-                <View key={character.id} style={[styles.graphConnection, { transform: [{ rotate: `${(index - 1) * 45}deg` }] }]}>
-                  <View style={styles.graphNode}>
-                    <Text style={styles.graphNodeText}>{character.name}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
+          <KnowledgeGraphViewer book={book} height={400} />
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>No knowledge graph data available yet.</Text>
@@ -446,37 +433,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-  },
-  graphPreview: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  graphNode: {
-    backgroundColor: '#3498db',
-    borderRadius: 20,
-    padding: 8,
-    paddingHorizontal: 12,
-    margin: 4,
-  },
-  graphNodeText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  graphConnections: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  graphConnection: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 100,
-    height: 2,
-    backgroundColor: '#ccc',
-    transformOrigin: 'left center',
   },
   entityCard: {
     backgroundColor: 'white',

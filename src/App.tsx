@@ -6,7 +6,8 @@ import Editor from './components/Editor';
 import ChapterList from './components/ChapterList';
 import ChapterPageList from './components/ChapterPageList';
 import BookInfo from './components/BookInfo';
-import { Book, Chapter } from './types';
+import NovelPlanner from './components/NovelPlanner';
+import { Book, Chapter, Branch } from './types';
 import { sampleBooks } from './data/sampleBooks';
 import ImportBooks from './components/ImportBooks';
 import { textToHtml, htmlToDelta } from './utils/formatConversion';
@@ -19,10 +20,12 @@ const App: React.FC = () => {
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
+  const [isPlanning, setIsPlanning] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'library' | 'bookInfo' | 'chapters' | 'chapterPages' | 'reader' | 'editor'>('library');
+  const [viewMode, setViewMode] = useState<'library' | 'bookInfo' | 'chapters' | 'chapterPages' | 'reader' | 'editor' | 'planner'>('library');
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+  const [activeBranch, setActiveBranch] = useState<Branch | null>(null);
   
   const handleSelectBook = (book: Book) => {
     // Prepare book for reading/editing if needed
@@ -89,11 +92,14 @@ const App: React.FC = () => {
     setSelectedChapter(null);
     setCurrentPage(0);
     setIsEditing(false);
+    setIsPlanning(false);
+    setActiveBranch(null);
     setViewMode('library');
   };
   
   const handleBackToBookInfo = () => {
     setSelectedChapter(null);
+    setActiveBranch(null);
     setViewMode('bookInfo');
   };
   
@@ -115,6 +121,11 @@ const App: React.FC = () => {
     setViewMode('editor');
   };
   
+  const handleStartPlanning = () => {
+    setIsPlanning(true);
+    setViewMode('planner');
+  };
+  
   const handleSaveEdits = (updatedBook: Book) => {
     // Update the book in the library
     setBooks(prevBooks => 
@@ -129,9 +140,28 @@ const App: React.FC = () => {
     setViewMode('reader');
   };
   
+  const handleSavePlan = (updatedBook: Book) => {
+    // Update the book in the library
+    setBooks(prevBooks => 
+      prevBooks.map(book => 
+        book.id === updatedBook.id ? updatedBook : book
+      )
+    );
+    
+    // Update the selected book
+    setSelectedBook(updatedBook);
+    setIsPlanning(false);
+    setViewMode('bookInfo');
+  };
+  
   const handleCancelEditing = () => {
     setIsEditing(false);
     setViewMode('reader');
+  };
+  
+  const handleCancelPlanning = () => {
+    setIsPlanning(false);
+    setViewMode('bookInfo');
   };
   
   const handleImportBook = (newBook: Book) => {
@@ -144,6 +174,29 @@ const App: React.FC = () => {
     setBooks(prevBooks => [...prevBooks, bookWithChapters]);
     setShowImportModal(false);
   };
+  
+  const handleCreateNewBook = () => {
+    const newBook: Book = {
+      id: Math.random().toString(36).substring(2, 9),
+      title: 'New Novel',
+      author: 'Author Name',
+      content: ['Start writing your novel here...'],
+      format: 'txt',
+      isEditable: true,
+      isPlanning: true,
+      characters: [],
+      events: [],
+      settings: [],
+      relationships: [],
+      branches: []
+    };
+    
+    setBooks(prevBooks => [...prevBooks, newBook]);
+    setSelectedBook(newBook);
+    setIsPlanning(true);
+    setViewMode('planner');
+    setIsSidebarOpen(false);
+  };
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -153,13 +206,25 @@ const App: React.FC = () => {
     setShowImportModal(true);
     setIsSidebarOpen(false);
   };
+  
+  const handleSelectBranch = (branch: Branch) => {
+    if (!selectedBook) return;
+    
+    setActiveBranch(branch);
+    setCurrentPage(branch.branchPointPageIndex);
+    setViewMode('reader');
+  };
 
   // Process knowledge graph data when reading
   const handlePageChange = (newPage: number) => {
     if (selectedBook) {
+      // Get the content to process (either from main content or active branch)
+      const content = activeBranch && newPage >= activeBranch.branchPointPageIndex
+        ? activeBranch.content[newPage - activeBranch.branchPointPageIndex]
+        : selectedBook.content[newPage];
+      
       // Extract knowledge graph data from the current page
-      const pageContent = selectedBook.content[newPage];
-      const triplets = extractTriplets(selectedBook, newPage, pageContent);
+      const triplets = extractTriplets(selectedBook, newPage, content);
       
       if (triplets.length > 0) {
         // Update book with new knowledge graph data
@@ -190,7 +255,8 @@ const App: React.FC = () => {
     if (viewMode === 'chapters') return `Chapters: ${selectedBook.title}`;
     if (viewMode === 'chapterPages' && selectedChapter) return `Pages in "${selectedChapter.title}"`;
     if (viewMode === 'editor') return `Edit: ${selectedBook.title}`;
-    return selectedBook.title;
+    if (viewMode === 'planner') return `Planning: ${selectedBook.title}`;
+    return selectedBook.title + (activeBranch ? ` (${activeBranch.name})` : '');
   };
 
   // Find current chapter information
@@ -291,12 +357,21 @@ const App: React.FC = () => {
               />
             )}
             
+            {viewMode === 'planner' && selectedBook && (
+              <NovelPlanner
+                book={selectedBook}
+                onSave={handleSavePlan}
+                onCancel={handleCancelPlanning}
+              />
+            )}
+            
             {viewMode === 'reader' && selectedBook && (
               <View style={styles.readerContainer}>
                 <Reader 
                   book={selectedBook}
                   currentPage={currentPage}
                   setCurrentPage={handlePageChange}
+                  activeBranch={activeBranch}
                 />
                 <View style={styles.readerFooter}>
                   {selectedChapter ? (
@@ -331,12 +406,17 @@ const App: React.FC = () => {
           isOpen={isSidebarOpen} 
           onClose={() => setIsSidebarOpen(false)}
           onImport={handleImportClick}
+          onCreateNew={handleCreateNewBook}
           currentView={getCurrentView()}
           onEdit={selectedBook?.isEditable && viewMode === 'reader' ? handleStartEditing : undefined}
+          onPlan={selectedBook && viewMode === 'bookInfo' ? handleStartPlanning : undefined}
           onBackToLibrary={handleBackToLibrary}
           onBackToBookInfo={viewMode !== 'library' && viewMode !== 'bookInfo' ? handleBackToBookInfo : undefined}
           onBackToChapters={viewMode === 'reader' || viewMode === 'chapterPages' ? handleBackToChapters : undefined}
           onBackToChapterPages={viewMode === 'reader' && selectedChapter ? handleBackToChapterPages : undefined}
+          branches={selectedBook?.branches || []}
+          onSelectBranch={handleSelectBranch}
+          activeBranchId={activeBranch?.id}
         />
       </View>
       
