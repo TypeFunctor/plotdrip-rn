@@ -1,6 +1,31 @@
 import { Book } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
+// Create character IDs for reuse
+const prideAndPrejudiceCharacters = {
+  elizabeth: uuidv4(),
+  darcy: uuidv4(),
+  bennet: uuidv4(),
+  jane: uuidv4(),
+  bingley: uuidv4()
+};
+
+const gatsbyCharacters = {
+  gatsby: uuidv4(),
+  nick: uuidv4(),
+  daisy: uuidv4(),
+  tom: uuidv4(),
+  jordan: uuidv4()
+};
+
+const mobyDickCharacters = {
+  ishmael: uuidv4(),
+  ahab: uuidv4(),
+  queequeg: uuidv4(),
+  starbuck: uuidv4(),
+  moby: uuidv4()
+};
+
 export const sampleBooks: Book[] = [
   {
     id: uuidv4(),
@@ -39,6 +64,89 @@ export const sampleBooks: Book[] = [
         id: uuidv4(),
         title: 'Chapter 3',
         pageIndex: 2
+      }
+    ],
+    characters: [
+      {
+        id: prideAndPrejudiceCharacters.elizabeth,
+        name: 'Elizabeth Bennet',
+        description: 'The second of the five Bennet daughters. She is intelligent and lively, with a strong independent streak.',
+        traits: ['intelligent', 'witty', 'prejudiced', 'independent'],
+        firstAppearance: 0
+      },
+      {
+        id: prideAndPrejudiceCharacters.darcy,
+        name: 'Fitzwilliam Darcy',
+        description: 'A wealthy gentleman who initially appears proud and disdainful but reveals a generous and thoughtful nature.',
+        traits: ['proud', 'wealthy', 'reserved', 'honorable'],
+        firstAppearance: 1
+      },
+      {
+        id: prideAndPrejudiceCharacters.bennet,
+        name: 'Mr. Bennet',
+        description: 'The patriarch of the Bennet family, known for his sarcastic humor and detachment.',
+        traits: ['sarcastic', 'detached', 'intelligent'],
+        firstAppearance: 2
+      },
+      {
+        id: prideAndPrejudiceCharacters.jane,
+        name: 'Jane Bennet',
+        description: 'The eldest and most beautiful Bennet daughter, known for her kindness and optimism.',
+        traits: ['beautiful', 'kind', 'optimistic'],
+        firstAppearance: 1
+      },
+      {
+        id: prideAndPrejudiceCharacters.bingley,
+        name: 'Charles Bingley',
+        description: 'A wealthy and amiable gentleman who falls in love with Jane Bennet.',
+        traits: ['amiable', 'wealthy', 'good-natured'],
+        firstAppearance: 1
+      }
+    ],
+    settings: [
+      {
+        id: uuidv4(),
+        name: 'Longbourn',
+        description: 'The Bennet family home, a small estate in Hertfordshire.',
+        firstAppearance: 0
+      },
+      {
+        id: uuidv4(),
+        name: 'Netherfield Park',
+        description: 'A large estate near Longbourn, rented by Mr. Bingley.',
+        firstAppearance: 2
+      },
+      {
+        id: uuidv4(),
+        name: 'Pemberley',
+        description: 'Mr. Darcy\'s grand estate in Derbyshire.',
+        firstAppearance: 1
+      }
+    ],
+    events: [
+      {
+        id: uuidv4(),
+        title: 'Netherfield Park is let',
+        description: 'News arrives that Netherfield Park has been rented by a wealthy young man, causing excitement among the Bennet family.',
+        pageIndex: 2,
+        characters: [prideAndPrejudiceCharacters.bennet],
+        importance: 'major'
+      }
+    ],
+    relationships: [
+      {
+        id: uuidv4(),
+        type: 'family',
+        description: 'Father and daughter relationship',
+        characters: [prideAndPrejudiceCharacters.bennet, prideAndPrejudiceCharacters.elizabeth],
+        firstMentioned: 0
+      },
+      {
+        id: uuidv4(),
+        type: 'romantic',
+        description: 'Developing romantic relationship despite initial prejudice and pride',
+        characters: [prideAndPrejudiceCharacters.elizabeth, prideAndPrejudiceCharacters.darcy],
+        firstMentioned: 1
       }
     ]
   },
@@ -100,6 +208,62 @@ export const sampleBooks: Book[] = [
         title: 'Chapter 2: The Long Journey',
         pageIndex: 3
       }
+    ],
+    characters: [
+      {
+        id: gatsbyCharacters.gatsby,
+        name: 'Jay Gatsby',
+        description: 'A mysterious and wealthy man known for his lavish parties, who is obsessed with Daisy Buchanan.',
+        traits: ['mysterious', 'wealthy', 'obsessive', 'romantic'],
+        firstAppearance: 3
+      },
+      {
+        id: gatsbyCharacters.nick,
+        name: 'Nick Carraway',
+        description: 'The narrator of the story, a young man from the Midwest who moves to New York to learn the bond business.',
+        traits: ['observant', 'reserved', 'honest'],
+        firstAppearance: 0
+      },
+      {
+        id: gatsbyCharacters.daisy,
+        name: 'Daisy Buchanan',
+        description: 'A beautiful young woman from a wealthy family, who was once in love with Gatsby.',
+        traits: ['beautiful', 'wealthy', 'careless', 'shallow'],
+        firstAppearance: 2
+      }
+    ],
+    settings: [
+      {
+        id: uuidv4(),
+        name: 'West Egg',
+        description: 'A fictional area of Long Island where the nouveau riche live, including Gatsby and Nick.',
+        firstAppearance: 1
+      },
+      {
+        id: uuidv4(),
+        name: 'East Egg',
+        description: 'A fictional area of Long Island where the old-money aristocracy lives, including the Buchanans.',
+        firstAppearance: 2
+      }
+    ],
+    events: [
+      {
+        id: uuidv4(),
+        title: 'Nick moves to West Egg',
+        description: 'Nick Carraway moves to West Egg and rents a small house next to Gatsby\'s mansion.',
+        pageIndex: 1,
+        characters: [gatsbyCharacters.nick],
+        importance: 'major'
+      }
+    ],
+    relationships: [
+      {
+        id: uuidv4(),
+        type: 'romantic',
+        description: 'Past romance and ongoing obsession',
+        characters: [gatsbyCharacters.gatsby, gatsbyCharacters.daisy],
+        firstMentioned: 3
+      }
     ]
   },
   {
@@ -159,6 +323,62 @@ export const sampleBooks: Book[] = [
         id: uuidv4(),
         title: 'Chapter 3: The Voyage',
         pageIndex: 6
+      }
+    ],
+    characters: [
+      {
+        id: mobyDickCharacters.ishmael,
+        name: 'Ishmael',
+        description: 'The narrator of the story, a sailor who signs up for a whaling voyage on the Pequod.',
+        traits: ['observant', 'philosophical', 'experienced'],
+        firstAppearance: 0
+      },
+      {
+        id: mobyDickCharacters.ahab,
+        name: 'Captain Ahab',
+        description: 'The monomaniacal captain of the Pequod, obsessed with hunting the white whale Moby Dick.',
+        traits: ['obsessive', 'vengeful', 'determined', 'mad'],
+        firstAppearance: 2
+      },
+      {
+        id: mobyDickCharacters.moby,
+        name: 'Moby Dick',
+        description: 'The great white whale that took Captain Ahab\'s leg in a previous encounter.',
+        traits: ['powerful', 'mysterious', 'elusive'],
+        firstAppearance: 3
+      }
+    ],
+    settings: [
+      {
+        id: uuidv4(),
+        name: 'The Pequod',
+        description: 'The whaling ship on which most of the story takes place.',
+        firstAppearance: 2
+      },
+      {
+        id: uuidv4(),
+        name: 'The Sea',
+        description: 'The vast ocean where the hunt for Moby Dick takes place.',
+        firstAppearance: 0
+      }
+    ],
+    events: [
+      {
+        id: uuidv4(),
+        title: 'Ishmael decides to go to sea',
+        description: 'Ishmael decides to join a whaling voyage to escape his depression and see the world.',
+        pageIndex: 0,
+        characters: [mobyDickCharacters.ishmael],
+        importance: 'pivotal'
+      }
+    ],
+    relationships: [
+      {
+        id: uuidv4(),
+        type: 'enemy',
+        description: 'Obsessive hunt and revenge',
+        characters: [mobyDickCharacters.ahab, mobyDickCharacters.moby],
+        firstMentioned: 3
       }
     ]
   }

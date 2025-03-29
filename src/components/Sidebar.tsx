@@ -8,6 +8,7 @@ interface SidebarProps {
   currentView: string;
   onEdit?: () => void;
   onBackToLibrary: () => void;
+  onBackToBookInfo?: () => void;
   onBackToChapters?: () => void;
   onBackToChapterPages?: () => void;
 }
@@ -19,6 +20,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onEdit,
   onBackToLibrary,
+  onBackToBookInfo,
   onBackToChapters,
   onBackToChapterPages
 }) => {
@@ -63,6 +65,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           {currentView !== 'library' && (
             <TouchableOpacity style={styles.menuItem} onPress={onBackToLibrary}>
               <Text style={styles.menuItemText}>Back to Library</Text>
+            </TouchableOpacity>
+          )}
+          
+          {onBackToBookInfo && currentView !== 'library' && currentView !== 'bookInfo' && (
+            <TouchableOpacity style={styles.menuItem} onPress={onBackToBookInfo}>
+              <Text style={styles.menuItemText}>Back to Book Info</Text>
             </TouchableOpacity>
           )}
           

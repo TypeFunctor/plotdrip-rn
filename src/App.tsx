@@ -5,12 +5,14 @@ import Reader from './components/Reader';
 import Editor from './components/Editor';
 import ChapterList from './components/ChapterList';
 import ChapterPageList from './components/ChapterPageList';
+import BookInfo from './components/BookInfo';
 import { Book, Chapter } from './types';
 import { sampleBooks } from './data/sampleBooks';
 import ImportBooks from './components/ImportBooks';
 import { textToHtml, htmlToDelta } from './utils/formatConversion';
 import Sidebar from './components/Sidebar';
 import { extractChapters } from './utils/chapterExtraction';
+import { extractTriplets, updateBookKnowledgeGraph } from './utils/knowledgeGraphExtractor';
 
 const App: React.FC = () => {
   const [books, setBooks] = useState<Book[]>(sampleBooks);
@@ -19,7 +21,7 @@ const App: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'library' | 'chapters' | 'chapterPages' | 'reader' | 'editor'>('library');
+  const [viewMode, setViewMode] = useState<'library' | 'bookInfo' | 'chapters' | 'chapterPages' | 'reader' | 'editor'>('library');
   const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   
   const handleSelectBook = (book: Book) => {
@@ -45,7 +47,7 @@ const App: React.FC = () => {
     }
     
     setSelectedBook(preparedBook);
-    setViewMode('chapters');
+    setViewMode('bookInfo');
   };
   
   const handleSelectChapter = (chapter: Chapter) => {
@@ -88,6 +90,11 @@ const App: React.FC = () => {
     setCurrentPage(0);
     setIsEditing(false);
     setViewMode('library');
+  };
+  
+  const handleBackToBookInfo = () => {
+    setSelectedChapter(null);
+    setViewMode('bookInfo');
   };
   
   const handleBackToChapters = () => {
@@ -147,6 +154,30 @@ const App: React.FC = () => {
     setIsSidebarOpen(false);
   };
 
+  // Process knowledge graph data when reading
+  const handlePageChange = (newPage: number) => {
+    if (selectedBook) {
+      // Extract knowledge graph data from the current page
+      const pageContent = selectedBook.content[newPage];
+      const triplets = extractTriplets(selectedBook, newPage, pageContent);
+      
+      if (triplets.length > 0) {
+        // Update book with new knowledge graph data
+        const updatedBook = updateBookKnowledgeGraph(selectedBook, triplets);
+        
+        // Update the book in state and library
+        setSelectedBook(updatedBook);
+        setBooks(prevBooks => 
+          prevBooks.map(book => 
+            book.id === updatedBook.id ? updatedBook : book
+          )
+        );
+      }
+    }
+    
+    setCurrentPage(newPage);
+  };
+
   // Determine current view for contextual sidebar
   const getCurrentView = () => {
     return viewMode;
@@ -155,6 +186,7 @@ const App: React.FC = () => {
   // Get header title based on current view
   const getHeaderTitle = () => {
     if (!selectedBook) return 'E-Reader Library';
+    if (viewMode === 'bookInfo') return `Book Info: ${selectedBook.title}`;
     if (viewMode === 'chapters') return `Chapters: ${selectedBook.title}`;
     if (viewMode === 'chapterPages' && selectedChapter) return `Pages in "${selectedChapter.title}"`;
     if (viewMode === 'editor') return `Edit: ${selectedBook.title}`;
@@ -224,11 +256,20 @@ const App: React.FC = () => {
               />
             )}
             
+            {viewMode === 'bookInfo' && selectedBook && (
+              <BookInfo
+                book={selectedBook}
+                onSelectChapters={() => setViewMode('chapters')}
+                onBackToLibrary={handleBackToLibrary}
+              />
+            )}
+            
             {viewMode === 'chapters' && selectedBook && (
               <ChapterList
                 book={selectedBook}
                 onSelectChapter={handleSelectChapter}
                 onBackToLibrary={handleBackToLibrary}
+                onBackToBookInfo={handleBackToBookInfo}
               />
             )}
             
@@ -255,7 +296,7 @@ const App: React.FC = () => {
                 <Reader 
                   book={selectedBook}
                   currentPage={currentPage}
-                  setCurrentPage={setCurrentPage}
+                  setCurrentPage={handlePageChange}
                 />
                 <View style={styles.readerFooter}>
                   {selectedChapter ? (
@@ -276,9 +317,9 @@ const App: React.FC = () => {
                   
                   <TouchableOpacity 
                     style={styles.footerButton} 
-                    onPress={handleBackToLibrary}
+                    onPress={handleBackToBookInfo}
                   >
-                    <Text style={styles.footerButtonText}>Back to Library</Text>
+                    <Text style={styles.footerButtonText}>Book Info</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -293,6 +334,7 @@ const App: React.FC = () => {
           currentView={getCurrentView()}
           onEdit={selectedBook?.isEditable && viewMode === 'reader' ? handleStartEditing : undefined}
           onBackToLibrary={handleBackToLibrary}
+          onBackToBookInfo={viewMode !== 'library' && viewMode !== 'bookInfo' ? handleBackToBookInfo : undefined}
           onBackToChapters={viewMode === 'reader' || viewMode === 'chapterPages' ? handleBackToChapters : undefined}
           onBackToChapterPages={viewMode === 'reader' && selectedChapter ? handleBackToChapterPages : undefined}
         />
