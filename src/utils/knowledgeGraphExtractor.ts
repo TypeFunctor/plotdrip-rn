@@ -11,6 +11,13 @@ export const extractTriplets = (book: Book, pageIndex: number, content: string):
   // In a real app, this would use NLP or an external API
   const triplets: KnowledgeGraphTriplet[] = [];
   
+  // Find the chapter for this page
+  const chapter = book.chapters?.find(c => 
+    c.pageIndex <= pageIndex && 
+    (c.pageIndex + 10 > pageIndex || // Assuming chapters are roughly 10 pages
+     book.chapters!.findIndex(nextC => nextC.pageIndex > c.pageIndex) === -1)
+  );
+  
   // Simple regex-based extraction for demonstration
   // Character detection (names with capital letters)
   const characterRegex = /\b([A-Z][a-z]+(?:\s[A-Z][a-z]+)*)\b/g;
@@ -36,7 +43,8 @@ export const extractTriplets = (book: Book, pageIndex: number, content: string):
         predicate,
         object,
         confidence: 0.7, // Mock confidence score
-        sourcePageIndex: pageIndex
+        sourcePageIndex: pageIndex,
+        chapterId: chapter?.id // Add chapter ID to triplet
       });
     }
   });
@@ -58,6 +66,9 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
   
   // Process triplets to update knowledge graph
   triplets.forEach(triplet => {
+    // Find the chapter for this triplet
+    const chapterId = triplet.chapterId;
+    
     // Character extraction
     if (
       triplet.predicate.includes('is') || 
@@ -77,7 +88,9 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
           name: triplet.subject,
           description: `${triplet.subject} ${triplet.predicate} ${triplet.object}`,
           traits: [triplet.object],
-          firstAppearance: triplet.sourcePageIndex
+          firstAppearance: triplet.sourcePageIndex,
+          chapterId: chapterId, // Add chapter ID
+          chapterProgression: chapterId ? [chapterId] : [] // Initialize chapter progression
         });
       } else if (existingCharacter) {
         // Update existing character
@@ -89,6 +102,19 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
         // Update description if it doesn't exist
         if (!existingCharacter.description) {
           existingCharacter.description = `${triplet.subject} ${triplet.predicate} ${triplet.object}`;
+        }
+        
+        // Update chapter progression if needed
+        if (chapterId) {
+          if (!existingCharacter.chapterId) {
+            existingCharacter.chapterId = chapterId;
+          }
+          
+          if (!existingCharacter.chapterProgression) {
+            existingCharacter.chapterProgression = [chapterId];
+          } else if (!existingCharacter.chapterProgression.includes(chapterId)) {
+            existingCharacter.chapterProgression.push(chapterId);
+          }
         }
       }
     }
@@ -126,10 +152,19 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
             id: uuidv4(),
             name: triplet.object,
             description: `Location where ${triplet.subject} ${triplet.predicate}`,
-            firstAppearance: triplet.sourcePageIndex
+            firstAppearance: triplet.sourcePageIndex,
+            chapterId: chapterId, // Add chapter ID
+            chapterProgression: chapterId ? [chapterId] : [] // Initialize chapter progression
           };
           updatedBook.settings!.push(newSetting);
           settingId = newSetting.id;
+        }
+        
+        // Calculate chapter position for ordering events
+        let chapterPosition = 0;
+        if (chapterId) {
+          const eventsInChapter = updatedBook.events!.filter(e => e.chapterId === chapterId);
+          chapterPosition = eventsInChapter.length;
         }
         
         // Add new event
@@ -140,7 +175,9 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
           pageIndex: triplet.sourcePageIndex,
           characters: character ? [character.id] : [],
           setting: settingId,
-          importance: 'minor' as const
+          importance: 'minor' as const,
+          chapterId: chapterId, // Add chapter ID
+          chapterPosition: chapterPosition // Add position within chapter
         };
         
         updatedBook.events!.push(newEvent);
@@ -185,7 +222,9 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
             type: 'other' as const,
             description: `${character1.name} ${triplet.predicate} ${character2.name}`,
             characters: [character1.id, character2.id],
-            firstMentioned: triplet.sourcePageIndex
+            firstMentioned: triplet.sourcePageIndex,
+            chapterId: chapterId, // Add chapter ID
+            chapterProgression: chapterId ? [chapterId] : [] // Initialize chapter progression
           };
           
           updatedBook.relationships!.push(newRelationship);
@@ -196,6 +235,13 @@ export const updateBookKnowledgeGraph = (book: Book, triplets: KnowledgeGraphTri
           
           character1.relationships.push(newRelationship.id);
           character2.relationships.push(newRelationship.id);
+        } else if (chapterId && !existingRelationship.chapterProgression?.includes(chapterId)) {
+          // Update chapter progression for existing relationship
+          if (!existingRelationship.chapterProgression) {
+            existingRelationship.chapterProgression = [chapterId];
+          } else {
+            existingRelationship.chapterProgression.push(chapterId);
+          }
         }
       }
     }

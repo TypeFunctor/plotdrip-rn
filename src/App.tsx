@@ -309,27 +309,29 @@ const App: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.appContainer}>
         <View style={styles.mainContent}>
-          <View style={styles.header}>
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
-              {selectedBook && viewMode === 'reader' && (
-                <Text style={styles.headerSubtitle}>by {selectedBook.author}</Text>
-              )}
+          {viewMode !== 'bookInfo' && (
+            <View style={styles.header}>
+              <View style={styles.headerTitleContainer}>
+                <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
+                {selectedBook && viewMode === 'reader' && (
+                  <Text style={styles.headerSubtitle}>by {selectedBook.author}</Text>
+                )}
+              </View>
+              
+              <View style={styles.headerCenterContainer}>
+                {chapterInfo && viewMode === 'reader' && (
+                  <Text style={styles.chapterInfo}>
+                    {chapterInfo.title}
+                    {chapterInfo.isChapterStart ? ' (Start)' : ''}
+                  </Text>
+                )}
+              </View>
+              
+              <TouchableOpacity onPress={toggleSidebar} style={styles.burgerButton}>
+                <Text style={styles.burgerIcon}>☰</Text>
+              </TouchableOpacity>
             </View>
-            
-            <View style={styles.headerCenterContainer}>
-              {chapterInfo && viewMode === 'reader' && (
-                <Text style={styles.chapterInfo}>
-                  {chapterInfo.title}
-                  {chapterInfo.isChapterStart ? ' (Start)' : ''}
-                </Text>
-              )}
-            </View>
-            
-            <TouchableOpacity onPress={toggleSidebar} style={styles.burgerButton}>
-              <Text style={styles.burgerIcon}>☰</Text>
-            </TouchableOpacity>
-          </View>
+          )}
 
           <View style={styles.contentContainer}>
             {viewMode === 'library' && (
@@ -345,6 +347,7 @@ const App: React.FC = () => {
                 onSelectChapters={() => setViewMode('chapters')}
                 onBackToLibrary={handleBackToLibrary}
                 onViewLiteraryDevices={handleViewLiteraryDevices}
+                onToggleSidebar={toggleSidebar}
               />
             )}
             

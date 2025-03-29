@@ -30,3 +30,13 @@ body {
 .sidebar-transition {
   transition: transform 300ms ease;
 }
+
+/* Prevent scrolling when sidebar is open */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Fix for React Native Web animations */
+div[style*="transform:"] {
+  will-change: transform;
+}

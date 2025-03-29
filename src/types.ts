@@ -38,6 +38,8 @@ export interface Character {
   goals?: string[];
   conflicts?: string[];
   arc?: 'flat' | 'positive' | 'negative' | 'circular';
+  chapterId?: string; // ID of the chapter where this character first appears
+  chapterProgression?: string[]; // IDs of chapters where this character appears, in order
 }
 
 export interface Event {
@@ -51,6 +53,8 @@ export interface Event {
   consequences?: string[]; // IDs of events that result from this event
   causes?: string[]; // IDs of events that caused this event
   branchPoint?: boolean; // Whether this event is a potential branch point
+  chapterId?: string; // ID of the chapter where this event occurs
+  chapterPosition?: number; // Position within the chapter (for ordering events)
 }
 
 export interface Setting {
@@ -62,6 +66,8 @@ export interface Setting {
   events?: string[]; // IDs of events that occur here
   atmosphere?: string;
   timeperiod?: string;
+  chapterId?: string; // ID of the chapter where this setting first appears
+  chapterProgression?: string[]; // IDs of chapters where this setting appears, in order
 }
 
 export interface Relationship {
@@ -72,6 +78,8 @@ export interface Relationship {
   firstMentioned?: number; // pageIndex
   dynamics?: string;
   evolution?: 'improving' | 'deteriorating' | 'stable' | 'complex';
+  chapterId?: string; // ID of the chapter where this relationship first appears
+  chapterProgression?: string[]; // IDs of chapters where this relationship develops, in order
 }
 
 export interface Branch {
@@ -88,6 +96,7 @@ export interface Branch {
   isActive?: boolean; // Whether this branch is currently being viewed
   reconnectBranchId?: string; // ID of the branch this reconnects to, if any
   reconnectPageIndex?: number; // Page index where the branch reconnects
+  chapterId?: string; // ID of the chapter where this branch starts
 }
 
 export interface KnowledgeGraph {
@@ -102,6 +111,8 @@ export interface KnowledgeGraphNode {
   label: string;
   entityId?: string; // ID of the corresponding entity (character, event, etc.)
   properties?: Record<string, any>;
+  chapterId?: string; // ID of the chapter where this node first appears
+  chapterPosition?: number; // Position within the chapter (for horizontal layout)
 }
 
 export interface KnowledgeGraphEdge {
@@ -111,6 +122,7 @@ export interface KnowledgeGraphEdge {
   label: string;
   weight?: number; // Strength of connection
   properties?: Record<string, any>;
+  chapterId?: string; // ID of the chapter where this edge first appears
 }
 
 export interface KnowledgeGraphTriplet {
@@ -119,6 +131,7 @@ export interface KnowledgeGraphTriplet {
   object: string;
   confidence: number;
   sourcePageIndex?: number;
+  chapterId?: string; // ID of the chapter where this triplet appears
 }
 
 export interface LiteraryDevicesByChapter {
