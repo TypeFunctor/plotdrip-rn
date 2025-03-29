@@ -4,7 +4,7 @@ import { Book, Chapter } from '../types';
 
 interface ChapterListProps {
   book: Book;
-  onSelectChapter: (pageIndex: number) => void;
+  onSelectChapter: (chapter: Chapter) => void;
   onBackToLibrary: () => void;
 }
 
@@ -35,7 +35,7 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onSelectChapter, onBack
             <TouchableOpacity
               key={chapter.id}
               style={styles.chapterItem}
-              onPress={() => onSelectChapter(chapter.pageIndex)}
+              onPress={() => onSelectChapter(chapter)}
             >
               <Text style={styles.chapterTitle}>{chapter.title}</Text>
               <Text style={styles.chapterPage}>Page {chapter.pageIndex + 1}</Text>
@@ -46,7 +46,11 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onSelectChapter, onBack
             <Text style={styles.noChaptersText}>No chapters detected</Text>
             <TouchableOpacity
               style={styles.startReadingButton}
-              onPress={() => onSelectChapter(0)}
+              onPress={() => onSelectChapter({
+                id: 'default',
+                title: 'Beginning',
+                pageIndex: 0
+              })}
             >
               <Text style={styles.startReadingButtonText}>Start Reading from Beginning</Text>
             </TouchableOpacity>
@@ -60,7 +64,11 @@ const ChapterList: React.FC<ChapterListProps> = ({ book, onSelectChapter, onBack
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.startReadingButton}
-          onPress={() => onSelectChapter(0)}
+          onPress={() => onSelectChapter({
+            id: 'default',
+            title: 'Beginning',
+            pageIndex: 0
+          })}
         >
           <Text style={styles.startReadingButtonText}>Start Reading</Text>
         </TouchableOpacity>

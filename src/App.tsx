@@ -4,7 +4,8 @@ import Library from './components/Library';
 import Reader from './components/Reader';
 import Editor from './components/Editor';
 import ChapterList from './components/ChapterList';
-import { Book } from './types';
+import ChapterPageList from './components/ChapterPageList';
+import { Book, Chapter } from './types';
 import { sampleBooks } from './data/sampleBooks';
 import ImportBooks from './components/ImportBooks';
 import { textToHtml, htmlToDelta } from './utils/formatConversion';
@@ -18,7 +19,8 @@ const App: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'library' | 'chapters' | 'reader' | 'editor'>('library');
+  const [viewMode, setViewMode] = useState<'library' | 'chapters' | 'chapterPages' | 'reader' | 'editor'>('library');
+  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
   
   const handleSelectBook = (book: Book) => {
     // Prepare book for reading/editing if needed
@@ -46,20 +48,59 @@ const App: React.FC = () => {
     setViewMode('chapters');
   };
   
-  const handleSelectChapter = (pageIndex: number) => {
+  const handleSelectChapter = (chapter: Chapter) => {
+    setSelectedChapter(chapter);
+    
+    // Determine if this chapter has multiple pages
+    if (selectedBook && selectedBook.chapters) {
+      const chapterIndex = selectedBook.chapters.findIndex(ch => ch.id === chapter.id);
+      const nextChapterIndex = chapterIndex + 1;
+      
+      const startPage = chapter.pageIndex;
+      let endPage = selectedBook.content.length - 1; // Default to end of book
+      
+      // If there's a next chapter, use its pageIndex as the end (exclusive)
+      if (nextChapterIndex < selectedBook.chapters.length) {
+        endPage = selectedBook.chapters[nextChapterIndex].pageIndex - 1;
+      }
+      
+      const pageCount = endPage - startPage + 1;
+      
+      // If chapter has multiple pages, show chapter page list
+      if (pageCount > 1) {
+        setViewMode('chapterPages');
+      } else {
+        // If only one page, go directly to reader
+        setCurrentPage(startPage);
+        setViewMode('reader');
+      }
+    }
+  };
+  
+  const handleSelectPage = (pageIndex: number) => {
     setCurrentPage(pageIndex);
     setViewMode('reader');
   };
   
   const handleBackToLibrary = () => {
     setSelectedBook(null);
+    setSelectedChapter(null);
     setCurrentPage(0);
     setIsEditing(false);
     setViewMode('library');
   };
   
   const handleBackToChapters = () => {
+    setSelectedChapter(null);
     setViewMode('chapters');
+  };
+  
+  const handleBackToChapterPages = () => {
+    if (selectedChapter) {
+      setViewMode('chapterPages');
+    } else {
+      handleBackToChapters();
+    }
   };
   
   const handleStartEditing = () => {
@@ -115,6 +156,7 @@ const App: React.FC = () => {
   const getHeaderTitle = () => {
     if (!selectedBook) return 'E-Reader Library';
     if (viewMode === 'chapters') return `Chapters: ${selectedBook.title}`;
+    if (viewMode === 'chapterPages' && selectedChapter) return `Pages in "${selectedChapter.title}"`;
     if (viewMode === 'editor') return `Edit: ${selectedBook.title}`;
     return selectedBook.title;
   };
@@ -190,6 +232,15 @@ const App: React.FC = () => {
               />
             )}
             
+            {viewMode === 'chapterPages' && selectedBook && selectedChapter && (
+              <ChapterPageList
+                book={selectedBook}
+                currentChapter={selectedChapter}
+                onSelectPage={handleSelectPage}
+                onBackToChapters={handleBackToChapters}
+              />
+            )}
+            
             {viewMode === 'editor' && selectedBook && (
               <Editor 
                 book={selectedBook}
@@ -207,12 +258,21 @@ const App: React.FC = () => {
                   setCurrentPage={setCurrentPage}
                 />
                 <View style={styles.readerFooter}>
-                  <TouchableOpacity 
-                    style={styles.footerButton} 
-                    onPress={handleBackToChapters}
-                  >
-                    <Text style={styles.footerButtonText}>Back to Chapters</Text>
-                  </TouchableOpacity>
+                  {selectedChapter ? (
+                    <TouchableOpacity 
+                      style={styles.footerButton} 
+                      onPress={handleBackToChapterPages}
+                    >
+                      <Text style={styles.footerButtonText}>Back to Chapter Pages</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity 
+                      style={styles.footerButton} 
+                      onPress={handleBackToChapters}
+                    >
+                      <Text style={styles.footerButtonText}>Back to Chapters</Text>
+                    </TouchableOpacity>
+                  )}
                   
                   <TouchableOpacity 
                     style={styles.footerButton} 
@@ -233,7 +293,8 @@ const App: React.FC = () => {
           currentView={getCurrentView()}
           onEdit={selectedBook?.isEditable && viewMode === 'reader' ? handleStartEditing : undefined}
           onBackToLibrary={handleBackToLibrary}
-          onBackToChapters={viewMode === 'reader' ? handleBackToChapters : undefined}
+          onBackToChapters={viewMode === 'reader' || viewMode === 'chapterPages' ? handleBackToChapters : undefined}
+          onBackToChapterPages={viewMode === 'reader' && selectedChapter ? handleBackToChapterPages : undefined}
         />
       </View>
       

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -9,85 +9,77 @@ interface SidebarProps {
   onEdit?: () => void;
   onBackToLibrary: () => void;
   onBackToChapters?: () => void;
+  onBackToChapterPages?: () => void;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ 
   isOpen, 
   onClose, 
   onImport, 
-  currentView, 
-  onEdit, 
+  currentView,
+  onEdit,
   onBackToLibrary,
-  onBackToChapters
+  onBackToChapters,
+  onBackToChapterPages
 }) => {
-  if (!isOpen) return null;
-
+  // Using CSS transitions instead of Animated API to avoid global reference issues
   return (
-    <View style={styles.overlay}>
-      <TouchableOpacity style={styles.overlayBackground} onPress={onClose} />
-      <View style={styles.sidebar}>
+    <>
+      {isOpen && (
+        <TouchableOpacity 
+          style={styles.overlay} 
+          onPress={onClose}
+          activeOpacity={1}
+        />
+      )}
+      
+      <View 
+        style={[
+          styles.sidebar,
+          { transform: [{ translateX: isOpen ? 0 : 300 }] }
+        ]}
+      >
         <View style={styles.header}>
-          <Text style={styles.headerText}>Menu</Text>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>×</Text>
+          <Text style={styles.title}>Menu</Text>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={styles.closeButton}>✕</Text>
           </TouchableOpacity>
         </View>
         
-        <ScrollView style={styles.content}>
-          {/* Library View Options */}
-          {currentView === 'library' && (
-            <View>
-              <TouchableOpacity style={styles.menuItem} onPress={onImport}>
-                <Text style={styles.menuItemText}>Import Book</Text>
-              </TouchableOpacity>
-            </View>
+        <View style={styles.content}>
+          {/* Import Books - available in all views */}
+          <TouchableOpacity style={styles.menuItem} onPress={onImport}>
+            <Text style={styles.menuItemText}>Import Books</Text>
+          </TouchableOpacity>
+          
+          {/* Edit Book - only in reader view and if book is editable */}
+          {onEdit && currentView === 'reader' && (
+            <TouchableOpacity style={styles.menuItem} onPress={onEdit}>
+              <Text style={styles.menuItemText}>Edit Page</Text>
+            </TouchableOpacity>
           )}
           
-          {/* Chapter List View Options */}
-          {currentView === 'chapters' && (
-            <View>
-              <TouchableOpacity style={styles.menuItem} onPress={onBackToLibrary}>
-                <Text style={styles.menuItemText}>Back to Library</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.menuItem} onPress={onImport}>
-                <Text style={styles.menuItemText}>Import Book</Text>
-              </TouchableOpacity>
-            </View>
+          {/* Navigation options based on current view */}
+          {currentView !== 'library' && (
+            <TouchableOpacity style={styles.menuItem} onPress={onBackToLibrary}>
+              <Text style={styles.menuItemText}>Back to Library</Text>
+            </TouchableOpacity>
           )}
           
-          {/* Reader View Options */}
-          {currentView === 'reader' && (
-            <View>
-              {onBackToChapters && (
-                <TouchableOpacity style={styles.menuItem} onPress={onBackToChapters}>
-                  <Text style={styles.menuItemText}>Back to Chapters</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={styles.menuItem} onPress={onBackToLibrary}>
-                <Text style={styles.menuItemText}>Back to Library</Text>
-              </TouchableOpacity>
-              {onEdit && (
-                <TouchableOpacity style={styles.menuItem} onPress={onEdit}>
-                  <Text style={styles.menuItemText}>Edit Page</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={styles.menuItem} onPress={onImport}>
-                <Text style={styles.menuItemText}>Import Book</Text>
-              </TouchableOpacity>
-            </View>
+          {onBackToChapters && (currentView === 'reader' || currentView === 'chapterPages') && (
+            <TouchableOpacity style={styles.menuItem} onPress={onBackToChapters}>
+              <Text style={styles.menuItemText}>Back to Chapters</Text>
+            </TouchableOpacity>
           )}
           
-          {/* Editor View Options */}
-          {currentView === 'editor' && (
-            <View>
-              <TouchableOpacity style={styles.menuItem} onPress={onBackToLibrary}>
-                <Text style={styles.menuItemText}>Back to Library</Text>
-              </TouchableOpacity>
-            </View>
+          {onBackToChapterPages && currentView === 'reader' && (
+            <TouchableOpacity style={styles.menuItem} onPress={onBackToChapterPages}>
+              <Text style={styles.menuItemText}>Back to Chapter Pages</Text>
+            </TouchableOpacity>
           )}
-        </ScrollView>
+        </View>
       </View>
-    </View>
+    </>
   );
 };
 
@@ -95,53 +87,50 @@ const styles = StyleSheet.create({
   overlay: {
     position: 'absolute',
     top: 0,
+    left: 0,
     right: 0,
     bottom: 0,
-    left: 0,
-    flexDirection: 'row',
-    zIndex: 1000,
-  },
-  overlayBackground: {
-    flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1,
   },
   sidebar: {
-    width: 250,
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 300,
+    height: '100%',
     backgroundColor: 'white',
+    zIndex: 2,
     shadowColor: '#000',
     shadowOffset: { width: -2, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
     elevation: 5,
+    transition: 'transform 300ms ease',
   },
   header: {
-    height: 60,
-    backgroundColor: '#3498db',
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  headerText: {
-    color: 'white',
+  title: {
     fontSize: 18,
     fontWeight: 'bold',
   },
   closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    color: '#666',
   },
   content: {
-    flex: 1,
+    padding: 16,
   },
   menuItem: {
-    padding: 16,
+    paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: '#eee',
   },
   menuItemText: {
     fontSize: 16,
