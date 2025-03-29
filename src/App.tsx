@@ -251,11 +251,11 @@ const App: React.FC = () => {
   // Get header title based on current view
   const getHeaderTitle = () => {
     if (!selectedBook) return 'E-Reader Library';
-    if (viewMode === 'bookInfo') return `Book Info: ${selectedBook.title}`;
-    if (viewMode === 'chapters') return `Chapters: ${selectedBook.title}`;
-    if (viewMode === 'chapterPages' && selectedChapter) return `Pages in "${selectedChapter.title}"`;
-    if (viewMode === 'editor') return `Edit: ${selectedBook.title}`;
-    if (viewMode === 'planner') return `Planning: ${selectedBook.title}`;
+    if (viewMode === 'bookInfo') return selectedBook.title;
+    if (viewMode === 'chapters') return selectedBook.title;
+    if (viewMode === 'chapterPages' && selectedChapter) return selectedChapter.title;
+    if (viewMode === 'editor') return selectedBook.title;
+    if (viewMode === 'planner') return selectedBook.title;
     return selectedBook.title + (activeBranch ? ` (${activeBranch.name})` : '');
   };
 
