@@ -9,6 +9,7 @@ interface BookInfoProps {
   onViewLiteraryDevices?: () => void;
   onViewKnowledgeBase?: () => void;
   onToggleSidebar: () => void;
+  onOpenNovelPlanner?: () => void;
 }
 
 const BookInfo: React.FC<BookInfoProps> = ({ 
@@ -17,7 +18,8 @@ const BookInfo: React.FC<BookInfoProps> = ({
   onBackToLibrary,
   onViewLiteraryDevices,
   onViewKnowledgeBase,
-  onToggleSidebar
+  onToggleSidebar,
+  onOpenNovelPlanner
 }) => {
   return (
     <View style={styles.container}>
@@ -109,6 +111,15 @@ const BookInfo: React.FC<BookInfoProps> = ({
             >
               <Text style={styles.actionButtonText}>View Chapters</Text>
             </TouchableOpacity>
+            
+            {onOpenNovelPlanner && (
+              <TouchableOpacity 
+                style={[styles.actionButton, styles.plannerButton]} 
+                onPress={onOpenNovelPlanner}
+              >
+                <Text style={styles.actionButtonText}>Novel Planning</Text>
+              </TouchableOpacity>
+            )}
             
             {onViewLiteraryDevices && (
               <TouchableOpacity 
@@ -308,6 +319,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     alignItems: 'center',
     minWidth: 120,
+  },
+  plannerButton: {
+    backgroundColor: '#9b59b6',
   },
   actionButtonText: {
     color: 'white',

@@ -1,508 +1,422 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Library from './components/Library';
 import Reader from './components/Reader';
 import Editor from './components/Editor';
+import ImportBooks from './components/ImportBooks';
+import { Book, Branch } from './types';
+import { sampleBooks } from './data/sampleBooks';
+import Sidebar from './components/Sidebar';
 import ChapterList from './components/ChapterList';
 import ChapterPageList from './components/ChapterPageList';
 import BookInfo from './components/BookInfo';
-import NovelPlanner from './components/NovelPlanner';
+import KnowledgeGraphViewer from './components/KnowledgeGraphViewer';
 import LiteraryDevicesList from './components/LiteraryDevicesList';
-import { Book, Chapter, Branch } from './types';
-import { sampleBooks } from './data/sampleBooks';
-import ImportBooks from './components/ImportBooks';
-import { textToHtml, htmlToDelta } from './utils/formatConversion';
-import Sidebar from './components/Sidebar';
-import { extractChapters } from './utils/chapterExtraction';
-import { extractTriplets, updateBookKnowledgeGraph } from './utils/knowledgeGraphExtractor';
+import KnowledgeBase from './components/KnowledgeBase';
+import NovelPlanner from './components/NovelPlanner';
 
 const App: React.FC = () => {
   const [books, setBooks] = useState<Book[]>(sampleBooks);
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
-  const [isPlanning, setIsPlanning] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'library' | 'bookInfo' | 'chapters' | 'chapterPages' | 'reader' | 'editor' | 'planner' | 'literaryDevices'>('library');
-  const [selectedChapter, setSelectedChapter] = useState<Chapter | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [view, setView] = useState<'library' | 'reader' | 'chapters' | 'chapterPages' | 'bookInfo' | 'knowledgeGraph' | 'literaryDevices' | 'knowledgeBase' | 'novelPlanner'>('library');
+  const [selectedChapter, setSelectedChapter] = useState<string | null>(null);
   const [activeBranch, setActiveBranch] = useState<Branch | null>(null);
   
+  // Add/remove body class when sidebar is open/closed
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.classList.add('sidebar-open');
+    } else {
+      document.body.classList.remove('sidebar-open');
+    }
+    
+    return () => {
+      document.body.classList.remove('sidebar-open');
+    };
+  }, [isSidebarOpen]);
+  
   const handleSelectBook = (book: Book) => {
-    // Prepare book for reading/editing if needed
-    let preparedBook = { ...book };
-    
-    // If the book doesn't have HTML content yet, generate it from text content
-    if (!preparedBook.htmlContent && preparedBook.content) {
-      preparedBook.htmlContent = preparedBook.content.map(textToHtml);
-    }
-    
-    // If the book is editable but doesn't have Delta content, generate it from HTML
-    if (preparedBook.isEditable && !preparedBook.deltaContent && preparedBook.htmlContent) {
-      preparedBook.deltaContent = preparedBook.htmlContent.map(html => {
-        const result = htmlToDelta(html);
-        return result.success ? result.content[0] : null;
-      });
-    }
-    
-    // Extract chapters if not already present
-    if (!preparedBook.chapters || preparedBook.chapters.length === 0) {
-      preparedBook.chapters = extractChapters(preparedBook);
-    }
-    
-    setSelectedBook(preparedBook);
-    setViewMode('bookInfo');
-  };
-  
-  const handleSelectChapter = (chapter: Chapter) => {
-    setSelectedChapter(chapter);
-    
-    // Determine if this chapter has multiple pages
-    if (selectedBook && selectedBook.chapters) {
-      const chapterIndex = selectedBook.chapters.findIndex(ch => ch.id === chapter.id);
-      const nextChapterIndex = chapterIndex + 1;
-      
-      const startPage = chapter.pageIndex;
-      let endPage = selectedBook.content.length - 1; // Default to end of book
-      
-      // If there's a next chapter, use its pageIndex as the end (exclusive)
-      if (nextChapterIndex < selectedBook.chapters.length) {
-        endPage = selectedBook.chapters[nextChapterIndex].pageIndex - 1;
-      }
-      
-      const pageCount = endPage - startPage + 1;
-      
-      // If chapter has multiple pages, show chapter page list
-      if (pageCount > 1) {
-        setViewMode('chapterPages');
-      } else {
-        // If only one page, go directly to reader
-        setCurrentPage(startPage);
-        setViewMode('reader');
-      }
-    }
-  };
-  
-  const handleSelectPage = (pageIndex: number) => {
-    setCurrentPage(pageIndex);
-    setViewMode('reader');
+    setSelectedBook(book);
+    setCurrentPage(0);
+    setView('bookInfo');
+    setActiveBranch(null);
   };
   
   const handleBackToLibrary = () => {
     setSelectedBook(null);
-    setSelectedChapter(null);
-    setCurrentPage(0);
-    setIsEditing(false);
-    setIsPlanning(false);
+    setView('library');
     setActiveBranch(null);
-    setViewMode('library');
   };
   
-  const handleBackToBookInfo = () => {
-    setSelectedChapter(null);
-    setActiveBranch(null);
-    setViewMode('bookInfo');
-  };
-  
-  const handleBackToChapters = () => {
-    setSelectedChapter(null);
-    setViewMode('chapters');
-  };
-  
-  const handleBackToChapterPages = () => {
-    if (selectedChapter) {
-      setViewMode('chapterPages');
-    } else {
-      handleBackToChapters();
+  const handleSelectChapters = () => {
+    if (selectedBook) {
+      setView('chapters');
     }
   };
   
-  const handleStartEditing = () => {
-    setIsEditing(true);
-    setViewMode('editor');
+  const handleSelectChapter = (chapterId: string) => {
+    setSelectedChapter(chapterId);
+    setView('chapterPages');
   };
   
-  const handleStartPlanning = () => {
-    setIsPlanning(true);
-    setViewMode('planner');
+  const handleSelectPage = (pageIndex: number) => {
+    setCurrentPage(pageIndex);
+    setView('reader');
   };
   
-  const handleViewLiteraryDevices = () => {
-    setViewMode('literaryDevices');
+  const handleToggleEdit = () => {
+    setIsEditing(!isEditing);
   };
   
-  const handleSaveEdits = (updatedBook: Book) => {
-    // Update the book in the library
-    setBooks(prevBooks => 
-      prevBooks.map(book => 
-        book.id === updatedBook.id ? updatedBook : book
-      )
-    );
-    
-    // Update the selected book
-    setSelectedBook(updatedBook);
-    setIsEditing(false);
-    setViewMode('reader');
-  };
-  
-  const handleSavePlan = (updatedBook: Book) => {
-    // Update the book in the library
-    setBooks(prevBooks => 
-      prevBooks.map(book => 
-        book.id === updatedBook.id ? updatedBook : book
-      )
-    );
-    
-    // Update the selected book
-    setSelectedBook(updatedBook);
-    setIsPlanning(false);
-    setViewMode('bookInfo');
-  };
-  
-  const handleCancelEditing = () => {
-    setIsEditing(false);
-    setViewMode('reader');
-  };
-  
-  const handleCancelPlanning = () => {
-    setIsPlanning(false);
-    setViewMode('bookInfo');
-  };
-  
-  const handleImportBook = (newBook: Book) => {
-    // Extract chapters for the new book
-    const bookWithChapters = {
-      ...newBook,
-      chapters: extractChapters(newBook)
-    };
-    
-    setBooks(prevBooks => [...prevBooks, bookWithChapters]);
-    setShowImportModal(false);
-  };
-  
-  const handleCreateNewBook = () => {
-    const newBook: Book = {
-      id: Math.random().toString(36).substring(2, 9),
-      title: 'New Novel',
-      author: 'Author Name',
-      content: ['Start writing your novel here...'],
-      format: 'txt',
-      isEditable: true,
-      isPlanning: true,
-      characters: [],
-      events: [],
-      settings: [],
-      relationships: [],
-      branches: []
-    };
-    
-    setBooks(prevBooks => [...prevBooks, newBook]);
-    setSelectedBook(newBook);
-    setIsPlanning(true);
-    setViewMode('planner');
-    setIsSidebarOpen(false);
-  };
-
-  const toggleSidebar = () => {
+  const handleToggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
   
-  const handleImportClick = () => {
-    setShowImportModal(true);
+  const handleCloseSidebar = () => {
     setIsSidebarOpen(false);
   };
   
-  const handleSelectBranch = (branch: Branch) => {
-    if (!selectedBook) return;
-    
-    setActiveBranch(branch);
-    setCurrentPage(branch.branchPointPageIndex);
-    setViewMode('reader');
+  const handleImportBook = (newBook: Book) => {
+    setBooks([...books, newBook]);
+    setShowImportModal(false);
   };
-
-  // Process knowledge graph data when reading
-  const handlePageChange = (newPage: number) => {
-    if (selectedBook) {
-      // Get the content to process (either from main content or active branch)
-      const content = activeBranch && newPage >= activeBranch.branchPointPageIndex
-        ? activeBranch.content[newPage - activeBranch.branchPointPageIndex]
-        : selectedBook.content[newPage];
-      
-      // Extract knowledge graph data from the current page
-      const triplets = extractTriplets(selectedBook, newPage, content);
-      
-      if (triplets.length > 0) {
-        // Update book with new knowledge graph data
-        const updatedBook = updateBookKnowledgeGraph(selectedBook, triplets);
-        
-        // Update the book in state and library
-        setSelectedBook(updatedBook);
-        setBooks(prevBooks => 
-          prevBooks.map(book => 
-            book.id === updatedBook.id ? updatedBook : book
-          )
-        );
-      }
-    }
-    
-    setCurrentPage(newPage);
+  
+  const handleViewKnowledgeGraph = () => {
+    setView('knowledgeGraph');
   };
-
-  // Update book with new data (used by components like LiteraryDevicesList)
+  
+  const handleViewLiteraryDevices = () => {
+    setView('literaryDevices');
+  };
+  
+  const handleViewKnowledgeBase = () => {
+    setView('knowledgeBase');
+  };
+  
+  const handleOpenNovelPlanner = () => {
+    setView('novelPlanner');
+  };
+  
   const handleUpdateBook = (updatedBook: Book) => {
-    setBooks(prevBooks => 
-      prevBooks.map(book => 
-        book.id === updatedBook.id ? updatedBook : book
-      )
+    const updatedBooks = books.map(book => 
+      book.id === updatedBook.id ? updatedBook : book
     );
-    
+    setBooks(updatedBooks);
     setSelectedBook(updatedBook);
   };
-
-  // Determine current view for contextual sidebar
-  const getCurrentView = () => {
-    return viewMode;
+  
+  const handleSavePlan = (updatedBook: Book) => {
+    handleUpdateBook(updatedBook);
+    setView('bookInfo');
   };
-
-  // Get header title based on current view
-  const getHeaderTitle = () => {
-    if (!selectedBook) return 'E-Reader Library';
-    if (viewMode === 'bookInfo') return selectedBook.title;
-    if (viewMode === 'chapters') return selectedBook.title;
-    if (viewMode === 'chapterPages' && selectedChapter) return selectedChapter.title;
-    if (viewMode === 'editor') return selectedBook.title;
-    if (viewMode === 'planner') return selectedBook.title;
-    if (viewMode === 'literaryDevices') return `${selectedBook.title} - Literary Devices`;
-    return selectedBook.title + (activeBranch ? ` (${activeBranch.name})` : '');
+  
+  const handleSelectBranch = (branch: Branch | null) => {
+    setActiveBranch(branch);
+    if (branch) {
+      setCurrentPage(branch.branchPointPageIndex);
+    }
+    setView('reader');
   };
-
-  // Find current chapter information
-  const getCurrentChapterInfo = () => {
-    if (!selectedBook || !selectedBook.chapters || selectedBook.chapters.length === 0 || viewMode !== 'reader') {
-      return null;
+  
+  const renderHeader = () => {
+    if (view === 'library') {
+      return (
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Library</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
     }
     
-    // Find the chapter this page belongs to
-    let currentChapter = null;
-    for (let i = 0; i < selectedBook.chapters.length; i++) {
-      if (selectedBook.chapters[i].pageIndex <= currentPage) {
-        currentChapter = selectedBook.chapters[i];
-      } else {
-        break;
-      }
+    if (view === 'reader' && selectedBook) {
+      // Find the chapter that contains the current page
+      const currentChapter = selectedBook.chapters?.find(chapter => {
+        const nextChapter = selectedBook.chapters?.find(c => c.pageIndex > chapter.pageIndex);
+        return currentPage >= chapter.pageIndex && (!nextChapter || currentPage < nextChapter.pageIndex);
+      });
+      
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('chapters')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {selectedBook.title}
+            {currentChapter && ` - ${currentChapter.title}`}
+            {activeBranch && ` (${activeBranch.name})`}
+          </Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
     }
     
-    if (currentChapter) {
-      const isChapterStart = currentChapter.pageIndex === currentPage;
-      return {
-        title: currentChapter.title,
-        isChapterStart
-      };
+    if (view === 'chapters' && selectedBook) {
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('bookInfo')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{selectedBook.title} - Chapters</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (view === 'chapterPages' && selectedBook && selectedChapter) {
+      const chapter = selectedBook.chapters?.find(c => c.id === selectedChapter);
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('chapters')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{selectedBook.title} - {chapter?.title}</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (view === 'knowledgeGraph' && selectedBook) {
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('bookInfo')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{selectedBook.title} - Knowledge Graph</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (view === 'literaryDevices' && selectedBook) {
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('bookInfo')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{selectedBook.title} - Literary Devices</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (view === 'knowledgeBase' && selectedBook) {
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('bookInfo')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{selectedBook.title} - Knowledge Base</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (view === 'novelPlanner' && selectedBook) {
+      return (
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => setView('bookInfo')} style={styles.backButton}>
+            <Text style={styles.backArrow}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{selectedBook.title} - Novel Planning</Text>
+          <TouchableOpacity onPress={handleToggleSidebar} style={styles.burgerButton}>
+            <Text style={styles.burgerIcon}>☰</Text>
+          </TouchableOpacity>
+        </View>
+      );
     }
     
     return null;
   };
   
-  const chapterInfo = getCurrentChapterInfo();
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.appContainer}>
-        <View style={styles.mainContent}>
-          {viewMode !== 'bookInfo' && (
-            <View style={styles.header}>
-              <View style={styles.headerTitleContainer}>
-                <Text style={styles.headerTitle}>{getHeaderTitle()}</Text>
-                {selectedBook && viewMode === 'reader' && (
-                  <Text style={styles.headerSubtitle}>by {selectedBook.author}</Text>
-                )}
-              </View>
-              
-              <View style={styles.headerCenterContainer}>
-                {chapterInfo && viewMode === 'reader' && (
-                  <Text style={styles.chapterInfo}>
-                    {chapterInfo.title}
-                    {chapterInfo.isChapterStart ? ' (Start)' : ''}
-                  </Text>
-                )}
-              </View>
-              
-              <TouchableOpacity onPress={toggleSidebar} style={styles.burgerButton}>
-                <Text style={styles.burgerIcon}>☰</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          <View style={styles.contentContainer}>
-            {viewMode === 'library' && (
-              <Library 
-                books={books} 
-                onSelectBook={handleSelectBook} 
-              />
-            )}
-            
-            {viewMode === 'bookInfo' && selectedBook && (
-              <BookInfo
-                book={selectedBook}
-                onSelectChapters={() => setViewMode('chapters')}
-                onBackToLibrary={handleBackToLibrary}
-                onViewLiteraryDevices={handleViewLiteraryDevices}
-                onToggleSidebar={toggleSidebar}
-              />
-            )}
-            
-            {viewMode === 'chapters' && selectedBook && (
-              <ChapterList
-                book={selectedBook}
-                onSelectChapter={handleSelectChapter}
-                onBackToLibrary={handleBackToLibrary}
-                onBackToBookInfo={handleBackToBookInfo}
-              />
-            )}
-            
-            {viewMode === 'chapterPages' && selectedBook && selectedChapter && (
-              <ChapterPageList
-                book={selectedBook}
-                currentChapter={selectedChapter}
-                onSelectPage={handleSelectPage}
-                onBackToChapters={handleBackToChapters}
-              />
-            )}
-            
-            {viewMode === 'editor' && selectedBook && (
-              <Editor 
-                book={selectedBook}
-                currentPage={currentPage}
-                onSave={handleSaveEdits}
-                onCancel={handleCancelEditing}
-              />
-            )}
-            
-            {viewMode === 'planner' && selectedBook && (
-              <NovelPlanner
-                book={selectedBook}
-                onSave={handleSavePlan}
-                onCancel={handleCancelPlanning}
-              />
-            )}
-            
-            {viewMode === 'literaryDevices' && selectedBook && (
-              <LiteraryDevicesList
-                book={{
-                  ...selectedBook,
-                  onUpdate: handleUpdateBook
-                }}
-                onBackToBookInfo={handleBackToBookInfo}
-              />
-            )}
-            
-            {viewMode === 'reader' && selectedBook && (
-              <View style={styles.readerContainer}>
-                <Reader 
-                  book={selectedBook}
-                  currentPage={currentPage}
-                  setCurrentPage={handlePageChange}
-                  activeBranch={activeBranch}
-                />
-                <View style={styles.readerFooter}>
-                  {selectedChapter ? (
-                    <TouchableOpacity 
-                      style={styles.footerButton} 
-                      onPress={handleBackToChapterPages}
-                    >
-                      <Text style={styles.footerButtonText}>Back to Chapter Pages</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity 
-                      style={styles.footerButton} 
-                      onPress={handleBackToChapters}
-                    >
-                      <Text style={styles.footerButtonText}>Back to Chapters</Text>
-                    </TouchableOpacity>
-                  )}
-                  
-                  <TouchableOpacity 
-                    style={styles.footerButton} 
-                    onPress={handleBackToBookInfo}
-                  >
-                    <Text style={styles.footerButtonText}>Book Info</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-        
-        <Sidebar 
-          isOpen={isSidebarOpen} 
-          onClose={() => setIsSidebarOpen(false)}
-          onImport={handleImportClick}
-          onCreateNew={handleCreateNewBook}
-          currentView={getCurrentView()}
-          onEdit={selectedBook?.isEditable && viewMode === 'reader' ? handleStartEditing : undefined}
-          onPlan={selectedBook && viewMode === 'bookInfo' ? handleStartPlanning : undefined}
-          onViewLiteraryDevices={selectedBook && viewMode !== 'literaryDevices' ? handleViewLiteraryDevices : undefined}
-          onBackToLibrary={handleBackToLibrary}
-          onBackToBookInfo={viewMode !== 'library' && viewMode !== 'bookInfo' ? handleBackToBookInfo : undefined}
-          onBackToChapters={viewMode === 'reader' || viewMode === 'chapterPages' ? handleBackToChapters : undefined}
-          onBackToChapterPages={viewMode === 'reader' && selectedChapter ? handleBackToChapterPages : undefined}
-          branches={selectedBook?.branches || []}
-          onSelectBranch={handleSelectBranch}
-          activeBranchId={activeBranch?.id}
+  const renderContent = () => {
+    if (view === 'library') {
+      return (
+        <Library 
+          books={books} 
+          onSelectBook={handleSelectBook} 
+          onImportBook={() => setShowImportModal(true)} 
         />
+      );
+    }
+    
+    if (!selectedBook) {
+      return null;
+    }
+    
+    if (view === 'reader') {
+      return isEditing ? (
+        <Editor 
+          book={selectedBook} 
+          currentPage={currentPage} 
+          setCurrentPage={setCurrentPage}
+          onSave={handleUpdateBook}
+        />
+      ) : (
+        <Reader 
+          book={selectedBook} 
+          currentPage={currentPage} 
+          setCurrentPage={setCurrentPage}
+          activeBranch={activeBranch}
+        />
+      );
+    }
+    
+    if (view === 'chapters') {
+      return (
+        <ChapterList 
+          book={selectedBook} 
+          onSelectChapter={handleSelectChapter} 
+          onBackToBookInfo={() => setView('bookInfo')}
+        />
+      );
+    }
+    
+    if (view === 'chapterPages' && selectedChapter) {
+      const chapter = selectedBook.chapters?.find(c => c.id === selectedChapter);
+      if (!chapter) return null;
+      
+      return (
+        <ChapterPageList 
+          book={selectedBook} 
+          chapter={chapter} 
+          onSelectPage={handleSelectPage} 
+          onBackToChapters={() => setView('chapters')}
+        />
+      );
+    }
+    
+    if (view === 'bookInfo') {
+      return (
+        <BookInfo 
+          book={selectedBook} 
+          onSelectChapters={handleSelectChapters} 
+          onBackToLibrary={handleBackToLibrary}
+          onViewLiteraryDevices={handleViewLiteraryDevices}
+          onViewKnowledgeBase={handleViewKnowledgeBase}
+          onToggleSidebar={handleToggleSidebar}
+          onOpenNovelPlanner={handleOpenNovelPlanner}
+        />
+      );
+    }
+    
+    if (view === 'knowledgeGraph') {
+      return (
+        <View style={styles.graphContainer}>
+          <KnowledgeGraphViewer 
+            book={selectedBook} 
+            height={window.innerHeight - 100} 
+          />
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setView('bookInfo')}
+          >
+            <Text style={styles.backButtonText}>Back to Book Info</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (view === 'literaryDevices') {
+      return (
+        <LiteraryDevicesList 
+          book={selectedBook} 
+          onBackToBookInfo={() => setView('bookInfo')}
+        />
+      );
+    }
+    
+    if (view === 'knowledgeBase') {
+      return (
+        <KnowledgeBase 
+          book={selectedBook} 
+          onBackToBookInfo={() => setView('bookInfo')}
+          onUpdateBook={handleUpdateBook}
+        />
+      );
+    }
+    
+    if (view === 'novelPlanner') {
+      return (
+        <NovelPlanner 
+          book={selectedBook} 
+          onSave={handleSavePlan}
+          onCancel={() => setView('bookInfo')}
+        />
+      );
+    }
+    
+    return null;
+  };
+  
+  return (
+    <View style={styles.container}>
+      {renderHeader()}
+      
+      <View style={styles.content}>
+        {renderContent()}
       </View>
       
-      <ImportBooks 
-        onImportBook={handleImportBook} 
-        isVisible={showImportModal}
+      {showImportModal && (
+        <ImportBooks 
+          onClose={() => setShowImportModal(false)} 
+          onImport={handleImportBook} 
+        />
+      )}
+      
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={handleCloseSidebar}
+        onToggleEdit={isEditing ? undefined : handleToggleEdit}
+        onImportBook={() => setShowImportModal(true)}
+        onBackToLibrary={handleBackToLibrary}
+        book={selectedBook}
+        onSelectBranch={handleSelectBranch}
+        activeBranch={activeBranch}
+        onViewKnowledgeGraph={selectedBook ? handleViewKnowledgeGraph : undefined}
+        onViewLiteraryDevices={selectedBook ? handleViewLiteraryDevices : undefined}
+        onViewKnowledgeBase={selectedBook ? handleViewKnowledgeBase : undefined}
+        onOpenNovelPlanner={selectedBook ? handleOpenNovelPlanner : undefined}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    height: '100vh',
-    width: '100vw',
-  },
-  appContainer: {
-    flex: 1,
-    flexDirection: 'row',
-  },
-  mainContent: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    height: 60,
+    height: 50,
     backgroundColor: '#3498db',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-  },
-  headerTitleContainer: {
-    flex: 1,
+    justifyContent: 'space-between',
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: 'white',
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  headerCenterContainer: {
-    flex: 2,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chapterInfo: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
+    flex: 1,
     textAlign: 'center',
   },
   burgerButton: {
@@ -514,32 +428,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: 'white',
   },
-  contentContainer: {
+  backButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  backArrow: {
+    fontSize: 24,
+    color: 'white',
+    fontWeight: 'bold',
+  },
+  content: {
     flex: 1,
   },
-  readerContainer: {
+  graphContainer: {
     flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-  },
-  readerFooter: {
     padding: 16,
-    backgroundColor: '#f0f0f0',
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
   },
-  footerButton: {
-    backgroundColor: '#3498db',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    flex: 1,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  footerButtonText: {
+  backButtonText: {
     color: 'white',
     fontWeight: 'bold',
   },

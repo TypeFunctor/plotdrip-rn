@@ -1,244 +1,202 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, TouchableWithoutFeedback } from 'react-native';
-import { Branch } from '../types';
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Book, Branch } from '../types';
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: () => void;
-  onCreateNew: () => void;
-  currentView: string;
-  onEdit?: () => void;
-  onPlan?: () => void;
-  onViewLiteraryDevices?: () => void;
+  onToggleEdit?: () => void;
+  onImportBook: () => void;
   onBackToLibrary: () => void;
-  onBackToBookInfo?: () => void;
-  onBackToChapters?: () => void;
-  onBackToChapterPages?: () => void;
-  branches: Branch[];
-  onSelectBranch: (branch: Branch) => void;
-  activeBranchId?: string;
+  book: Book | null;
+  onSelectBranch: (branch: Branch | null) => void;
+  activeBranch: Branch | null;
+  onViewKnowledgeGraph?: () => void;
+  onViewLiteraryDevices?: () => void;
+  onViewKnowledgeBase?: () => void;
+  onOpenNovelPlanner?: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  onClose,
-  onImport,
-  onCreateNew,
-  currentView,
-  onEdit,
-  onPlan,
-  onViewLiteraryDevices,
+const Sidebar: React.FC<SidebarProps> = ({ 
+  isOpen, 
+  onClose, 
+  onToggleEdit, 
+  onImportBook, 
   onBackToLibrary,
-  onBackToBookInfo,
-  onBackToChapters,
-  onBackToChapterPages,
-  branches,
+  book,
   onSelectBranch,
-  activeBranchId
+  activeBranch,
+  onViewKnowledgeGraph,
+  onViewLiteraryDevices,
+  onViewKnowledgeBase,
+  onOpenNovelPlanner
 }) => {
-  const [animation] = useState(new Animated.Value(0));
-  const screenWidth = Dimensions.get('window').width;
-  const sidebarWidth = 280;
-
-  useEffect(() => {
-    Animated.timing(animation, {
-      toValue: isOpen ? 1 : 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, [isOpen]);
-
-  const translateX = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [sidebarWidth, 0],
-  });
-
-  const opacity = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 0.5],
-  });
-
-  const handleMenuItemPress = (action: () => void) => {
-    action();
-    onClose();
+  // Render branches section if book has branches
+  const renderBranches = () => {
+    if (!book || !book.branches || book.branches.length === 0) return null;
+    
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Story Branches</Text>
+        <TouchableOpacity 
+          style={[
+            styles.menuItem, 
+            !activeBranch && styles.activeMenuItem
+          ]} 
+          onPress={() => onSelectBranch(null)}
+        >
+          <Text style={[
+            styles.menuItemText,
+            !activeBranch && styles.activeMenuItemText
+          ]}>Main Storyline</Text>
+        </TouchableOpacity>
+        
+        {book.branches.map(branch => (
+          <TouchableOpacity 
+            key={branch.id} 
+            style={[
+              styles.menuItem, 
+              activeBranch?.id === branch.id && styles.activeMenuItem
+            ]} 
+            onPress={() => onSelectBranch(branch)}
+          >
+            <Text style={[
+              styles.menuItemText,
+              activeBranch?.id === branch.id && styles.activeMenuItemText
+            ]}>{branch.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
   };
-
-  if (!isOpen) return null;
-
+  
   return (
-    <View style={styles.container}>
+    <>
       {/* Overlay */}
-      <TouchableWithoutFeedback onPress={onClose}>
-        <Animated.View style={[styles.overlay, { opacity }]} />
-      </TouchableWithoutFeedback>
+      {isOpen && (
+        <TouchableOpacity 
+          style={styles.overlay} 
+          onPress={onClose}
+          activeOpacity={1}
+        />
+      )}
       
       {/* Sidebar */}
-      <Animated.View 
+      <View 
         style={[
           styles.sidebar, 
-          { transform: [{ translateX }] }
+          { transform: [{ translateX: isOpen ? 0 : -280 }] }
         ]}
+        className="sidebar-transition"
       >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Menu</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>×</Text>
+            <Text style={styles.closeIcon}>×</Text>
           </TouchableOpacity>
         </View>
         
-        <ScrollView style={styles.content} bounces={false}>
+        <ScrollView style={styles.scrollContainer}>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Navigation</Text>
-            
-            <TouchableOpacity 
-              style={[styles.menuItem, currentView === 'library' && styles.activeMenuItem]} 
-              onPress={() => handleMenuItemPress(onBackToLibrary)}
-            >
-              <Text style={[styles.menuItemText, currentView === 'library' && styles.activeMenuItemText]}>Library</Text>
+            <TouchableOpacity style={styles.menuItem} onPress={onBackToLibrary}>
+              <Text style={styles.menuItemText}>Back to Library</Text>
             </TouchableOpacity>
             
-            {onBackToBookInfo && (
-              <TouchableOpacity 
-                style={[styles.menuItem, currentView === 'bookInfo' && styles.activeMenuItem]} 
-                onPress={() => handleMenuItemPress(onBackToBookInfo)}
-              >
-                <Text style={[styles.menuItemText, currentView === 'bookInfo' && styles.activeMenuItemText]}>Book Info</Text>
-              </TouchableOpacity>
-            )}
-            
-            {onBackToChapters && (
-              <TouchableOpacity 
-                style={[styles.menuItem, currentView === 'chapters' && styles.activeMenuItem]} 
-                onPress={() => handleMenuItemPress(onBackToChapters)}
-              >
-                <Text style={[styles.menuItemText, currentView === 'chapters' && styles.activeMenuItemText]}>Chapters</Text>
-              </TouchableOpacity>
-            )}
-            
-            {onBackToChapterPages && (
-              <TouchableOpacity 
-                style={[styles.menuItem, currentView === 'chapterPages' && styles.activeMenuItem]} 
-                onPress={() => handleMenuItemPress(onBackToChapterPages)}
-              >
-                <Text style={[styles.menuItemText, currentView === 'chapterPages' && styles.activeMenuItemText]}>Chapter Pages</Text>
+            {onToggleEdit && (
+              <TouchableOpacity style={styles.menuItem} onPress={onToggleEdit}>
+                <Text style={styles.menuItemText}>Toggle Edit Mode</Text>
               </TouchableOpacity>
             )}
           </View>
           
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Actions</Text>
-            
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={() => handleMenuItemPress(onImport)}
-            >
-              <Text style={styles.menuItemText}>Import Book</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem} 
-              onPress={() => handleMenuItemPress(onCreateNew)}
-            >
-              <Text style={styles.menuItemText}>Create New Book</Text>
-            </TouchableOpacity>
-            
-            {onEdit && (
-              <TouchableOpacity 
-                style={[styles.menuItem, currentView === 'editor' && styles.activeMenuItem]} 
-                onPress={() => handleMenuItemPress(onEdit)}
-              >
-                <Text style={[styles.menuItemText, currentView === 'editor' && styles.activeMenuItemText]}>Edit Content</Text>
-              </TouchableOpacity>
-            )}
-            
-            {onPlan && (
-              <TouchableOpacity 
-                style={[styles.menuItem, currentView === 'planner' && styles.activeMenuItem]} 
-                onPress={() => handleMenuItemPress(onPlan)}
-              >
-                <Text style={[styles.menuItemText, currentView === 'planner' && styles.activeMenuItemText]}>Novel Planning</Text>
-              </TouchableOpacity>
-            )}
-            
-            {onViewLiteraryDevices && (
-              <TouchableOpacity 
-                style={[styles.menuItem, currentView === 'literaryDevices' && styles.activeMenuItem]} 
-                onPress={() => handleMenuItemPress(onViewLiteraryDevices)}
-              >
-                <Text style={[styles.menuItemText, currentView === 'literaryDevices' && styles.activeMenuItemText]}>Literary Devices</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          {renderBranches()}
           
-          {branches.length > 0 && (
+          {book && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Story Branches</Text>
+              <Text style={styles.sectionTitle}>Book Tools</Text>
               
-              {branches.map(branch => (
+              {onOpenNovelPlanner && (
                 <TouchableOpacity 
-                  key={branch.id} 
-                  style={[
-                    styles.menuItem, 
-                    branch.id === activeBranchId && styles.activeMenuItem
-                  ]} 
-                  onPress={() => handleMenuItemPress(() => onSelectBranch(branch))}
+                  style={styles.menuItem} 
+                  onPress={onOpenNovelPlanner}
                 >
-                  <Text style={[
-                    styles.menuItemText,
-                    branch.id === activeBranchId && styles.activeMenuItemText
-                  ]}>
-                    {branch.name}
-                  </Text>
+                  <Text style={styles.menuItemText}>Novel Planning</Text>
                 </TouchableOpacity>
-              ))}
+              )}
+              
+              {onViewKnowledgeBase && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={onViewKnowledgeBase}
+                >
+                  <Text style={styles.menuItemText}>Knowledge Base</Text>
+                </TouchableOpacity>
+              )}
+              
+              {onViewLiteraryDevices && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={onViewLiteraryDevices}
+                >
+                  <Text style={styles.menuItemText}>Literary Devices</Text>
+                </TouchableOpacity>
+              )}
+              
+              {onViewKnowledgeGraph && (
+                <TouchableOpacity 
+                  style={styles.menuItem} 
+                  onPress={onViewKnowledgeGraph}
+                >
+                  <Text style={styles.menuItemText}>Knowledge Graph</Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
+          
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Import</Text>
+            <TouchableOpacity style={styles.menuItem} onPress={onImportBook}>
+              <Text style={styles.menuItemText}>Import Book</Text>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
-      </Animated.View>
-    </View>
+      </View>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 1000,
-  },
   overlay: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'black',
-    zIndex: 1001,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
   },
   sidebar: {
     position: 'absolute',
     top: 0,
-    right: 0,
+    left: 0,
+    bottom: 0,
     width: 280,
-    height: '100%',
     backgroundColor: 'white',
-    zIndex: 1002,
+    zIndex: 1001,
     shadowColor: '#000',
-    shadowOffset: { width: -2, height: 0 },
-    shadowOpacity: 0.25,
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 10,
+    elevation: 5,
   },
   header: {
-    height: 60,
+    height: 50,
     backgroundColor: '#3498db',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
+    justifyContent: 'space-between',
   },
   headerTitle: {
     fontSize: 18,
@@ -246,50 +204,47 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   closeButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: 8,
   },
-  closeButtonText: {
-    fontSize: 20,
+  closeIcon: {
+    fontSize: 24,
     color: 'white',
     fontWeight: 'bold',
   },
-  content: {
+  scrollContainer: {
     flex: 1,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingBottom: 8,
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#666',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: '#f5f5f5',
+    marginBottom: 8,
+    textTransform: 'uppercase',
   },
   menuItem: {
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    paddingHorizontal: 8,
+    borderRadius: 4,
+    marginBottom: 4,
   },
   activeMenuItem: {
-    backgroundColor: '#e1f5fe',
-    borderLeftWidth: 4,
-    borderLeftColor: '#3498db',
+    backgroundColor: '#e1f0fa',
   },
   menuItemText: {
     fontSize: 16,
     color: '#333',
   },
   activeMenuItemText: {
-    fontWeight: 'bold',
     color: '#3498db',
+    fontWeight: 'bold',
   },
 });
 
